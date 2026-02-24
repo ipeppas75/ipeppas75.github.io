@@ -2,264 +2,314 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SuppTrack</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA Meta Tags -->
+    <!-- Apple PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SuppTrack">
-    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3105/3105807.png">
+
+    <title>SuppTrack</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
     <style>
         :root {
-            --bg: #f2f2f7;
-            --card: #ffffff;
-            --primary: #007aff;
-            --success: #34c759;
-            --text: #1c1c1e;
-            --gray: #8e8e93;
+            --primary: #007AFF; /* Apple Blue */
+            --bg-light: #f2f2f7; /* Apple System Gray 6 */
+            --card-bg: #ffffff;
+            --text-main: #000000;
+            --text-sub: #8e8e93;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg); color: var(--text); margin: 0; padding: 0;
-            padding-top: env(safe-area-inset-top); padding-bottom: 100px;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
         }
 
-        /* Layout */
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        header { margin-bottom: 24px; }
-        h1 { font-size: 28px; margin: 0; font-weight: 800; }
-        
-        /* Progress Bar */
-        .progress-container { background: #e5e5ea; border-radius: 10px; height: 12px; margin: 15px 0; overflow: hidden; }
-        .progress-bar { background: var(--success); height: 100%; transition: width 0.3s ease; }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            /* Prevent scrolling/bounce on iOS */
+            overflow: hidden; 
+            position: fixed;
+            width: 100%;
+        }
 
-        /* Section Styling */
-        .section-title { font-size: 13px; text-transform: uppercase; color: var(--gray); margin: 20px 0 10px 5px; font-weight: 600; }
-        .card { background: var(--card); border-radius: 14px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        /* --- Handling the Translucent Status Bar --- */
+        header {
+            /* padding-top: env(safe-area-inset-top) ensures content starts below the notch/clock */
+            padding: calc(env(safe-area-inset-top) + 20px) 20px 20px;
+            background: var(--card-bg);
+            border-bottom: 1px solid #d1d1d6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        /* Supplement Item */
-        .supp-item { display: flex; align-items: center; justify-content: space-between; }
-        .supp-info { display: flex; flex-direction: column; }
-        .supp-name { font-weight: 600; font-size: 17px; }
-        .supp-meta { font-size: 14px; color: var(--gray); }
-        .checkbox { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #d1d1d6; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .checkbox.checked { background: var(--success); border-color: var(--success); }
-        .checkbox.checked::after { content: '✓'; color: white; font-weight: bold; }
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
 
-        /* Form / Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; padding: 20px; align-items: center; }
-        .modal-content { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; max-width: 400px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-        button { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-ghost { background: transparent; color: var(--primary); margin-top: 10px; }
+        /* --- Main App Area --- */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+        }
 
-        /* Navigation Bar */
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0 env(safe-area-inset-bottom); border-top: 1px solid #d1d1d6; }
-        .nav-item { border: none; background: none; color: var(--gray); font-size: 11px; display: flex; flex-direction: column; align-items: center; width: auto; padding: 0; }
+        /* --- Progress Ring --- */
+        .progress-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .stats-overlay {
+            position: absolute;
+            text-align: center;
+        }
+
+        .stats-overlay h2 {
+            font-size: 44px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .stats-overlay p {
+            margin: 0;
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+
+        /* --- Action Grid --- */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .btn-action {
+            background: var(--card-bg);
+            border: none;
+            padding: 18px 10px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-action:active {
+            background: #e5e5ea;
+        }
+
+        .btn-action i { color: var(--primary); }
+        .btn-action span { font-weight: 600; font-size: 13px; }
+
+        /* --- Bottom Nav --- */
+        nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px);
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid #d1d1d6;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 500;
+            gap: 4px;
+        }
+
         .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
 
-        /* Stats Bars */
-        .chart-row { display: flex; align-items: flex-end; height: 100px; gap: 10px; margin-top: 20px; }
-        .chart-bar { flex: 1; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 5px; position: relative; }
-        .chart-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--gray); }
+        /* Modal styling */
+        #customInputModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
 
-        .hidden { display: none; }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 320px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #d1d1d6;
+            border-radius: 12px;
+            font-size: 18px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Screen: Today -->
-    <div id="screen-today">
-        <header>
-            <h1>Today</h1>
-            <div class="progress-container"><div id="main-progress" class="progress-bar" style="width: 0%"></div></div>
-            <div id="progress-text" style="font-size: 14px; color: var(--gray);">0% completed</div>
-        </header>
-        <div id="schedule-list"></div>
-    </div>
+    <header>
+        <i data-lucide="user" style="color: var(--primary)"></i>
+        <h1>SuppTrack</h1>
+        <i data-lucide="calendar" onclick="resetManual()"></i>
+    </header>
 
-    <!-- Screen: My Supplements -->
-    <div id="screen-manage" class="hidden">
-        <header>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>Supplements</h1>
-                <button class="btn-primary" style="width: auto; padding: 8px 15px;" onclick="openModal()">+ Add</button>
+    <main>
+        <div class="progress-wrapper">
+            <svg width="250" height="250">
+                <circle stroke="#e5e5ea" stroke-width="12" fill="transparent" r="110" cx="125" cy="125"/>
+                <circle id="progressBar" class="progress-ring__circle" stroke="#007AFF" stroke-width="12" stroke-dasharray="691.15" stroke-dashoffset="691.15" fill="transparent" r="110" cx="125" cy="125"/>
+            </svg>
+            <div class="stats-overlay">
+                <h2 id="val">0</h2>
+                <p>of 3500 ml</p>
             </div>
-        </header>
-        <div id="supplements-full-list"></div>
-    </div>
-
-    <!-- Screen: Stats -->
-    <div id="screen-stats" class="hidden">
-        <header><h1>Insights</h1></header>
-        <div class="card">
-            <h3>Weekly Activity</h3>
-            <div class="chart-row" id="weekly-chart"></div>
         </div>
-        <div class="card">
-            <h3>Health Tip</h3>
-            <p id="health-tip" style="color: var(--gray); line-height: 1.4;"></p>
+
+        <div class="action-grid">
+            <button class="btn-action" onclick="add(250)">
+                <i data-lucide="cup-soda"></i>
+                <span>250ml</span>
+            </button>
+            <button class="btn-action" onclick="add(500)">
+                <i data-lucide="droplet"></i>
+                <span>500ml</span>
+            </button>
+            <button class="btn-action" onclick="showModal()">
+                <i data-lucide="plus-circle"></i>
+                <span>Custom</span>
+            </button>
+        </div>
+    </main>
+
+    <nav>
+        <div class="nav-item active"><i data-lucide="droplet"></i><span>Hydration</span></div>
+        <div class="nav-item"><i data-lucide="activity"></i><span>Activity</span></div>
+        <div class="nav-item"><i data-lucide="settings"></i><span>Settings</span></div>
+    </nav>
+
+    <div id="customInputModal" onclick="hideModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0">Log Intake</h3>
+            <input type="number" id="customAmount" pattern="[0-9]*" inputmode="numeric" placeholder="Amount in ml">
+            <button class="btn-block" onclick="submitCustom()">Log Water</button>
         </div>
     </div>
-</div>
 
-<!-- Bottom Navigation -->
-<nav>
-    <button class="nav-item active" onclick="showScreen('today')"><span class="nav-icon">📅</span>Today</button>
-    <button class="nav-item" onclick="showScreen('manage')"><span class="nav-icon">💊</span>Manage</button>
-    <button class="nav-item" onclick="showScreen('stats')"><span class="nav-icon">📊</span>Stats</button>
-</nav>
+    <script>
+        lucide.createIcons();
 
-<!-- Add/Edit Modal -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <h2 id="modal-title">New Supplement</h2>
-        <input type="text" id="form-name" placeholder="Name (e.g. Creatine)">
-        <input type="text" id="form-dose" placeholder="Dosage (e.g. 5g)">
-        <select id="form-time">
-            <option value="Pre-workout">Pre-workout</option>
-            <option value="Morning">Morning</option>
-            <option value="Evening">Evening</option>
-            <option value="Before bed">Before bed</option>
-        </select>
-        <button class="btn-primary" onclick="saveSupplement()">Save Supplement</button>
-        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
-    </div>
-</div>
+        const GOAL = 3500;
+        const CIRCUMFERENCE = 2 * Math.PI * 110;
+        let currentIntake = 0;
 
-<script>
-    // --- Data Management ---
-    let supplements = JSON.parse(localStorage.getItem('supps')) || [
-        { id: 1, name: 'Vitamin D3', dose: '2000 IU', time: 'Morning', taken: false },
-        { id: 2, name: 'Creatine', dose: '5g', time: 'Pre-workout', taken: false },
-        { id: 3, name: 'Omega-3', dose: '1000mg', time: 'Morning', taken: false },
-        { id: 4, name: 'Magnesium', dose: '400mg', time: 'Before bed', taken: false },
-        { id: 5, name: 'Vitamin B Complex', dose: '1 tab', time: 'Morning', taken: false },
-        { id: 6, name: 'Zinc', dose: '15mg', time: 'Evening', taken: false }
-    ];
-
-    const tips = [
-        "Take Vitamin D with a meal containing fat for better absorption.",
-        "Consistency is key! Try to take your supplements at the same time daily.",
-        "Magnesium before bed can help improve your sleep quality.",
-        "Stay hydrated! Creatine requires plenty of water to be effective."
-    ];
-
-    function saveData() {
-        localStorage.setItem('supps', JSON.stringify(supplements));
-        renderAll();
-    }
-
-    // --- Navigation ---
-    function showScreen(screen) {
-        document.querySelectorAll('[id^="screen-"]').forEach(s => s.classList.add('hidden'));
-        document.getElementById(`screen-${screen}`).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        if(screen === 'stats') renderStats();
-    }
-
-    // --- UI Rendering ---
-    function renderAll() {
-        renderToday();
-        renderManage();
-    }
-
-    function renderToday() {
-        const list = document.getElementById('schedule-list');
-        list.innerHTML = '';
-        
-        const times = ['Pre-workout', 'Morning', 'Evening', 'Before bed'];
-        let total = supplements.length;
-        let takenCount = supplements.filter(s => s.taken).length;
-        
-        const progress = total > 0 ? (takenCount / total) * 100 : 0;
-        document.getElementById('main-progress').style.width = `${progress}%`;
-        document.getElementById('progress-text').innerText = `${Math.round(progress)}% completed today`;
-
-        times.forEach(time => {
-            const timeSupps = supplements.filter(s => s.time === time);
-            if (timeSupps.length > 0) {
-                list.innerHTML += `<div class="section-title">${time}</div>`;
-                timeSupps.forEach(s => {
-                    list.innerHTML += `
-                        <div class="card supp-item" onclick="toggleTaken(${s.id})">
-                            <div class="supp-info">
-                                <span class="supp-name">${s.name}</span>
-                                <span class="supp-meta">${s.dose}</span>
-                            </div>
-                            <div class="checkbox ${s.taken ? 'checked' : ''}"></div>
-                        </div>`;
-                });
+        function init() {
+            const today = new Date().toDateString();
+            const savedDate = localStorage.getItem('supp_date');
+            
+            if (savedDate !== today) {
+                currentIntake = 0;
+                save();
+            } else {
+                currentIntake = parseInt(localStorage.getItem('supp_intake')) || 0;
             }
-        });
-    }
-
-    function renderManage() {
-        const list = document.getElementById('supplements-full-list');
-        list.innerHTML = '';
-        supplements.forEach(s => {
-            list.innerHTML += `
-                <div class="card supp-item">
-                    <div class="supp-info">
-                        <span class="supp-name">${s.name}</span>
-                        <span class="supp-meta">${s.time} • ${s.dose}</span>
-                    </div>
-                    <button style="width: auto; background: none; color: #ff3b30; font-size: 14px;" onclick="deleteSupp(${s.id})">Delete</button>
-                </div>`;
-        });
-    }
-
-    function renderStats() {
-        document.getElementById('health-tip').innerText = tips[Math.floor(Math.random() * tips.length)];
-        const chart = document.getElementById('weekly-chart');
-        chart.innerHTML = '';
-        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-        days.forEach(day => {
-            const height = Math.floor(Math.random() * 80) + 20; // Simulated data
-            chart.innerHTML += `<div class="chart-bar" style="height: ${height}%"><span class="chart-label">${day}</span></div>`;
-        });
-    }
-
-    // --- Actions ---
-    function toggleTaken(id) {
-        const supp = supplements.find(s => s.id === id);
-        supp.taken = !supp.taken;
-        saveData();
-    }
-
-    function deleteSupp(id) {
-        if(confirm('Delete this supplement?')) {
-            supplements = supplements.filter(s => s.id !== id);
-            saveData();
+            updateUI();
         }
-    }
 
-    function openModal() { document.getElementById('modal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function updateUI() {
+            document.getElementById('val').innerText = currentIntake;
+            const progress = Math.min(currentIntake / GOAL, 1);
+            const offset = CIRCUMFERENCE - (progress * CIRCUMFERENCE);
+            document.getElementById('progressBar').style.strokeDashoffset = offset;
+        }
 
-    function saveSupplement() {
-        const name = document.getElementById('form-name').value;
-        const dose = document.getElementById('form-dose').value;
-        const time = document.getElementById('form-time').value;
+        function add(amt) {
+            currentIntake += amt;
+            save();
+            updateUI();
+            if (window.navigator.vibrate) window.navigator.vibrate(10);
+        }
+
+        function save() {
+            localStorage.setItem('supp_intake', currentIntake);
+            localStorage.setItem('supp_date', new Date().toDateString());
+        }
+
+        function resetManual() {
+            if(confirm("Reset progress?")) {
+                currentIntake = 0;
+                save();
+                updateUI();
+            }
+        }
+
+        function showModal() { document.getElementById('customInputModal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('customInputModal').style.display = 'none'; }
         
-        if (name) {
-            supplements.push({ id: Date.now(), name, dose, time, taken: false });
-            saveData();
-            closeModal();
-            document.getElementById('form-name').value = '';
+        function submitCustom() {
+            const val = parseInt(document.getElementById('customAmount').value);
+            if(val) {
+                add(val);
+                hideModal();
+                document.getElementById('customAmount').value = '';
+            }
         }
-    }
 
-    // Initialize
-    renderAll();
-</script>
-
+        init();
+    </script>
 </body>
 </html>
