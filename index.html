@@ -20,6 +20,7 @@
             --text: #ffffff;
             --text-dim: #8e8e93;
             --success: #32D74B;
+            --reset-color: #ff453a;
         }
 
         * {
@@ -40,15 +41,25 @@
             width: 100%;
         }
 
+        /* --- Header --- */
         header {
-            padding: calc(env(safe-area-inset-top) + 20px) 25px 10px;
+            padding: calc(env(safe-area-inset-top) + 20px) 25px 0px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         header h1 { font-size: 20px; font-weight: 800; margin: 0; color: var(--primary); }
-        .reset-link { font-size: 11px; font-weight: 700; color: #444; letter-spacing: 1px; }
+        
+        .reset-btn {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--reset-color);
+            background: rgba(255, 69, 58, 0.1);
+            padding: 6px 12px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+        }
 
         .content {
             flex: 1;
@@ -56,23 +67,36 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-evenly;
+            padding: 10px 0;
         }
 
+        /* --- Stats Logic --- */
         .stats-box { text-align: center; }
-        .stats-box h2 { font-size: 64px; margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
-        .stats-box p { font-size: 13px; color: var(--text-dim); margin-top: 8px; font-weight: 600; letter-spacing: 2px; }
+        .stats-box h2 { font-size: 68px; margin: 0; font-weight: 900; line-height: 1; transition: color 0.3s; }
+        .stats-box p { font-size: 13px; color: var(--text-dim); margin-top: 10px; font-weight: 700; letter-spacing: 1.5px; }
+        
+        .remaining-chip {
+            background: var(--card);
+            border: 1px solid #333;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
 
-        /* --- Glass & Fluid Logic --- */
+        /* --- Fluid Glass with Seamless Animation --- */
         .glass {
             position: relative;
             width: 150px;
-            height: 260px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            height: 280px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 3px solid rgba(255, 255, 255, 0.1);
             border-top: none;
-            border-radius: 0 0 40px 40px;
+            border-radius: 0 0 45px 45px;
             overflow: hidden;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
 
         .water {
@@ -82,35 +106,23 @@
             width: 100%;
             height: 0%; /* Dynamic */
             background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
-            transition: height 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: height 1.8s cubic-bezier(0.19, 1, 0.22, 1);
+            will-change: height;
         }
 
-        /* --- High Quality Parallax Waves --- */
-        .wave-container {
+        /* Seamless Wave via CSS Background Repeat */
+        .water::before {
+            content: "";
             position: absolute;
-            top: -30px;
+            top: -24px;
             left: 0;
-            width: 200%;
-            height: 40px;
-        }
-
-        .wave-svg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .wave-front {
-            fill: var(--primary);
-            animation: move-wave 4s linear infinite;
-            opacity: 0.9;
-        }
-
-        .wave-back {
-            fill: var(--primary);
-            animation: move-wave 7s linear infinite reverse;
-            opacity: 0.3;
-            transform: translateY(4px);
+            width: 200%; /* Wider to prevent gaps */
+            height: 25px;
+            /* Inlined SVG for 100% reliability */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 25 20 50 10 T 100 10 L 100 20 L 0 20 Z' fill='%2300D2FF'/%3E%3C/svg%3E");
+            background-size: 50% 100%; /* Matches container width */
+            background-repeat: repeat-x;
+            animation: move-wave 2.5s linear infinite;
         }
 
         @keyframes move-wave {
@@ -118,38 +130,38 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* --- Buttons Grid --- */
+        /* --- Input Dock --- */
         .dock {
-            padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px);
+            padding: 0 20px calc(env(safe-area-inset-bottom) + 20px);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 15px;
             width: 100%;
         }
 
         .btn {
             background: var(--card);
-            border: 1px solid #2c2c2e;
-            border-radius: 20px;
-            padding: 22px 10px;
+            border: 1px solid #333;
+            border-radius: 22px;
+            padding: 24px 10px;
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 700;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .btn:active { background: #323235; transform: scale(0.94); }
+        .btn:active { background: #323235; transform: scale(0.92); border-color: var(--primary); }
         .btn svg { stroke: var(--primary); }
 
-        /* --- Modal --- */
+        /* --- Custom Modal --- */
         #modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.92);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.95);
             display: none;
             align-items: center;
             justify-content: center;
@@ -160,10 +172,10 @@
         .modal-card {
             background: var(--card);
             width: 100%;
-            padding: 30px;
-            border-radius: 30px;
+            padding: 35px;
+            border-radius: 35px;
             text-align: center;
-            border: 1px solid #333;
+            border: 1px solid #444;
         }
 
         input {
@@ -171,10 +183,10 @@
             background: #000;
             border: 2px solid var(--primary);
             color: white;
-            font-size: 32px;
+            font-size: 36px;
             padding: 15px;
-            border-radius: 15px;
-            margin: 20px 0;
+            border-radius: 18px;
+            margin: 25px 0;
             text-align: center;
             outline: none;
         }
@@ -182,11 +194,12 @@
         .confirm-btn {
             background: var(--primary);
             width: 100%;
-            padding: 16px;
-            border-radius: 15px;
+            padding: 18px;
+            border-radius: 18px;
             color: #000;
             font-weight: 800;
             border: none;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -194,37 +207,31 @@
 
     <header>
         <h1>SuppTrack</h1>
-        <div class="reset-link" onclick="resetAll()">RESET</div>
+        <div class="reset-btn" onclick="resetAll()">RESET</div>
     </header>
 
     <div class="content">
         <div class="stats-box">
+            <div id="remainingChip" class="remaining-chip">3,500 ml to go</div>
             <h2 id="totalText">0</h2>
-            <p id="goalLabel">OF 3500 ML</p>
+            <p id="goalLabel">OF 3,500 ML</p>
         </div>
 
         <div class="glass">
-            <div id="water" class="water">
-                <div class="wave-container">
-                    <svg class="wave-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path class="wave-back" d="M0 10 Q 25 20 50 10 T 100 10 L 100 20 L 0 20 Z" />
-                        <path class="wave-front" d="M0 10 Q 25 0 50 10 T 100 10 L 100 20 L 0 20 Z" />
-                    </svg>
-                </div>
-            </div>
+            <div id="water" class="water"></div>
         </div>
 
         <div class="dock">
             <div class="btn" onclick="log(250)">
-                <svg width="24" height="24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path></svg>
+                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path></svg>
                 250ml
             </div>
             <div class="btn" onclick="log(500)">
-                <svg width="24" height="24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
                 500ml
             </div>
             <div class="btn" onclick="showModal()">
-                <svg width="24" height="24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Custom
             </div>
         </div>
@@ -232,8 +239,8 @@
 
     <div id="modal" onclick="hideModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
-            <h3 style="margin:0">Log Water</h3>
-            <input type="number" id="customInput" inputmode="numeric" placeholder="400">
+            <h3 style="margin:0; font-size: 22px;">Custom Log</h3>
+            <input type="number" id="customInput" inputmode="numeric" placeholder="0">
             <button class="confirm-btn" onclick="handleCustom()">ADD TO LOG</button>
         </div>
     </div>
@@ -242,55 +249,59 @@
         const GOAL = 3500;
         let currentIntake = 0;
 
-        // Key names are changed to clear out any previous corrupted '8500' data
-        const KEY_AMT = 'SUPP_V1_INTAKE';
-        const KEY_DATE = 'SUPP_V1_DATE';
+        const KEY_AMT = 'SUPP_FINAL_AMT';
+        const KEY_DATE = 'SUPP_FINAL_DATE';
 
         function init() {
             const today = new Date().toDateString();
             const lastDate = localStorage.getItem(KEY_DATE);
             
-            // Daily Reset Check
             if (lastDate !== today) {
                 currentIntake = 0;
                 save(today);
             } else {
-                const stored = localStorage.getItem(KEY_AMT);
-                currentIntake = Number(stored) || 0;
+                currentIntake = Number(localStorage.getItem(KEY_AMT)) || 0;
             }
 
-            // Start water at 0 and animate up to current value
+            // Start animation from zero every time app opens
             document.getElementById('water').style.height = '0%';
-            setTimeout(updateUI, 100);
+            setTimeout(updateUI, 200);
         }
 
         function log(val) {
-            // Strict number parsing prevents the "8500" text joining bug
+            // Strict number arithmetic
             currentIntake = Number(currentIntake) + Number(val);
             save(new Date().toDateString());
             updateUI();
-            if (navigator.vibrate) navigator.vibrate(15);
+            if (navigator.vibrate) navigator.vibrate(25);
         }
 
         function updateUI() {
             const display = document.getElementById('totalText');
-            display.innerText = currentIntake;
+            display.innerText = currentIntake.toLocaleString();
 
             const label = document.getElementById('goalLabel');
-            const percent = Math.min((currentIntake / GOAL) * 100, 100);
+            const chip = document.getElementById('remainingChip');
             
-            // Update Fluid Level
+            const percent = Math.min((currentIntake / GOAL) * 100, 100);
+            const remaining = Math.max(GOAL - currentIntake, 0);
+
+            // Smooth Fluid Rise
             document.getElementById('water').style.height = percent + '%';
 
-            // Check Success State
-            if (currentIntake >= GOAL) {
-                display.style.color = 'var(--success)';
-                label.innerText = "GOAL REACHED!";
-                label.style.color = 'var(--success)';
-            } else {
+            // Update Remaining Counter
+            if (remaining > 0) {
+                chip.innerText = remaining.toLocaleString() + " ml to go";
+                chip.style.display = "inline-block";
                 display.style.color = 'white';
-                label.innerText = "OF 3500 ML";
+                label.innerText = "OF 3,500 ML";
                 label.style.color = 'var(--text-dim)';
+            } else {
+                chip.innerText = "Goal Reached! 🥳";
+                chip.style.color = 'var(--success)';
+                display.style.color = 'var(--success)';
+                label.innerText = "KEEP IT UP!";
+                label.style.color = 'var(--success)';
             }
         }
 
@@ -300,7 +311,7 @@
         }
 
         function resetAll() {
-            if (confirm("Reset current progress?")) {
+            if (confirm("This will clear your progress for today. Are you sure?")) {
                 currentIntake = 0;
                 save(new Date().toDateString());
                 updateUI();
