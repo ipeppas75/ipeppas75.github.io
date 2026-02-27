@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEA Financial Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --surface: #111318;
+            --surface2: #181c24;
+            --border: #232836;
+            --accent: #4f8ef7;
+            --accent2: #f7c14f;
+            --accent3: #4fd4a0;
+            --accent-red: #f74f6a;
+            --text: #e8eaf2;
+            --text-muted: #6b7280;
+            --text-soft: #9aa3b4;
+            --green: #4fd4a0;
+            --red: #f74f6a;
+            --orange: #f7884f;
+            --shadow: 0 8px 40px rgba(0,0,0,0.5);
+            --glow: 0 0 30px rgba(79,142,247,0.08);
+            --radius: 14px;
+        }
+
+        body.light-theme {
+            --bg: #f0f2f8;
+            --surface: #ffffff;
+            --surface2: #f7f8fc;
+            --border: #e2e6f0;
+            --accent: #2563eb;
+            --accent2: #d97706;
+            --accent3: #059669;
+            --text: #111827;
+            --text-muted: #9ca3af;
+            --text-soft: #6b7280;
+            --shadow: 0 4px 24px rgba(0,0,0,0.07);
+            --glow: none;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 32px 24px;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+            background-image: 
+                radial-gradient(ellipse 60% 40% at 10% 0%, rgba(79,142,247,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 90% 100%, rgba(79,212,160,0.05) 0%, transparent 60%);
+        }
+
+        body.light-theme {
+            background-image: none;
+        }
+
+        /* ─── TOP BAR ─── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto 32px auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+        }
+
+        .brand-name {
+            font-size: 1.72em;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .brand-sub {
+            font-size: 0.72em;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ─── THEME TOGGLE ─── */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8em;
+            color: var(--text-soft);
+        }
+
+        .theme-switch { display: inline-block; height: 22px; position: relative; width: 44px; }
+        .theme-switch input { display: none; }
+        .slider {
+            background: var(--border);
+            bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0;
+            transition: .3s; border-radius: 34px; border: 1px solid var(--border);
+        }
+        .slider:before {
+            background: var(--accent);
+            bottom: 3px; content: ""; height: 14px; left: 3px; position: absolute;
+            transition: .3s; width: 14px; border-radius: 50%;
+        }
+        input:checked + .slider { background: rgba(79,142,247,0.2); border-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* ─── INPUT SECTION ─── */
+        .input-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto 28px auto;
+            box-shadow: var(--shadow);
+        }
+
+        .input-label {
+            font-size: 0.72em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%; height: 110px; padding: 14px 16px;
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.82em;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        textarea:focus { border-color: var(--accent); }
+        textarea::placeholder { color: var(--text-muted); }
+
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 9px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88em;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-process {
+            background: linear-gradient(135deg, var(--accent), #3a6fd4);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(79,142,247,0.35);
+        }
+        .btn-process:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,0.45); }
+
+        .btn-reset {
+            background: var(--surface2);
+            color: var(--text-soft);
+            border: 1px solid var(--border);
+        }
+        .btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+        .btn-export {
+            background: linear-gradient(135deg, #3a8f6e, var(--accent3));
+            color: #fff;
+            display: none;
+            box-shadow: 0 4px 14px rgba(79,212,160,0.3);
+        }
+        .btn-export:hover { transform: translateY(-1px); }
+
+        /* ─── REPORT ─── */
+        #reportCapture {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 32px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow), var(--glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2));
+        }
+
+        .report-header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.2em;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        #reportDate {
+            color: var(--text-muted);
+            font-size: 0.82em;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* ─── CARDS ─── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: border-color 0.2s;
+        }
+
+        .card:hover { border-color: rgba(79,142,247,0.2); }
+
+        .top-section {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .top-section > .card { flex: 1; min-width: 300px; }
+        .card-performance { flex: 1.5 !important; }
+
+        /* ─── SECTION HEADERS ─── */
+        h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1em;
+            color: var(--text);
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(180deg, var(--accent), var(--accent3));
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-size: 0.7em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* ─── TABLE ─── */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 14px;
+            font-size: 0.86em;
+        }
+
+        th, td {
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--text-muted);
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(79,142,247,0.04); }
+
+        /* ─── TOTALS BOX ─── */
+        .grand-total-box {
+            font-weight: 600;
+            font-size: 0.92em;
+            padding: 12px 16px;
+            border-radius: 9px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* ─── CHART ─── */
+        .chart-container {
+            position: relative;
+            height: 340px;
+            width: 100%;
+        }
+
+        /* Pie chart container needs extra room for external labels */
+        .chart-container-pie {
+            position: relative;
+            height: 420px;
+            width: 100%;
+            overflow: visible;
+        }
+
+        /* ─── PERFORMANCE LISTS ─── */
+        .perf-grid { display: flex; gap: 16px; }
+        .perf-col { flex: 1; }
+
+        ul { list-style: none; }
+
+        ul li {
+            padding: 7px 12px;
+            margin-bottom: 4px;
+            background: var(--surface2);
+            border-radius: 7px;
+            font-size: 0.82em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'DM Mono', monospace;
+            transition: background 0.15s;
+            border: 1px solid transparent;
+        }
+
+        ul li:hover { border-color: var(--border); }
+
+        ul li span:first-child {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95em;
+            color: var(--text-soft);
+        }
+
+        /* ─── COLORS ─── */
+        .negative { color: var(--red) !important; }
+        .hidden { display: none; }
+        .no-export {}
+
+        /* ─── BOTTOM TOGGLE BUTTON ─── */
+        .toggle-btn-wrap {
+            max-width: 1400px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .btn-toggle {
+            background: var(--surface);
+            color: var(--text-soft);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 10px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ─── MONTHLY BREAKDOWN ─── */
+        #monthlyBreakdownContainer {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-top: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        /* ─── PILL BADGE ─── */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.72em;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+        }
+
+        .badge-blue { background: rgba(79,142,247,0.15); color: var(--accent); }
+
+        /* ─── DIVIDER ─── */
+        .mb20 { margin-bottom: 20px; }
+    </style>
+</head>
+<body class="dark-theme">
+
+<!-- TOP BAR -->
+<div class="topbar no-export">
+    <div class="brand">
+        <div class="brand-icon">📈</div>
+        <div>
+            <div class="brand-name">TEA FINANCIAL</div>
+            <div class="brand-sub">Portfolio Analytics</div>
+        </div>
+    </div>
+    <div class="theme-switch-wrapper">
+        <span>🌙</span>
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle" onchange="toggleTheme()"/>
+            <div class="slider"></div>
+        </label>
+        <span>☀️</span>
+    </div>
+</div>
+
+<!-- INPUT -->
+<div class="input-section no-export">
+    <div class="input-label">Εισαγωγή Δεδομένων</div>
+    <textarea id="dataInput" placeholder="Επικολλήστε τα δεδομένα εδώ…"></textarea>
+    <div class="button-group">
+        <button class="btn-process" onclick="processData()">📊 Ανάλυση</button>
+        <button class="btn-reset" onclick="resetPage()">↺ Reset</button>
+        <button id="exportBtn" class="btn-export" onclick="exportToImage()">🖼️ Εξαγωγή PNG</button>
+    </div>
+</div>
+
+<!-- REPORT -->
+<div id="reportCapture" class="hidden">
+
+    <div class="report-header">
+        <div class="brand-name">TEA Financial Report</div>
+        <p id="reportDate"></p>
+    </div>
+
+    <div class="top-section">
+
+        <div class="card">
+            <h2>Category Totals</h2>
+            <table><tbody id="totalsBody"></tbody></table>
+            <div id="grandTotal" class="grand-total-box" style="background:rgba(247,193,79,0.1); border:1px solid rgba(247,193,79,0.3);"></div>
+            <div id="roiPercent" class="grand-total-box" style="background:rgba(79,212,160,0.1); border:1px solid rgba(79,212,160,0.3); margin-top:8px;"></div>
+        </div>
+
+        <div class="card">
+            <h2>Capital Allocation</h2>
+            <div class="chart-container-pie"><canvas id="groupChart"></canvas></div>
+        </div>
+
+        <div class="card card-performance">
+            <h2>Performance <span class="badge badge-blue">ROI</span></h2>
+            <div class="perf-grid">
+                <div class="perf-col">
+                    <h3>🏆 Top 10 Months</h3>
+                    <ul id="bestRoiMonths"></ul>
+                </div>
+                <div class="perf-col">
+                    <h3>📉 Bottom 10 Months</h3>
+                    <ul id="worstRoiMonths"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card mb20">
+        <h2>Monthly Performance Trend (ROI)</h2>
+        <div class="chart-container" style="height:280px;"><canvas id="monthlyROIChart"></canvas></div>
+    </div>
+
+    <div class="card">
+        <h2>Monthly Total Capital Trend</h2>
+        <div class="chart-container" style="height:280px;"><canvas id="monthlyChart"></canvas></div>
+    </div>
+
+</div>
+
+<!-- BOTTOM TOGGLE -->
+<div class="toggle-btn-wrap no-export">
+    <button class="btn-toggle" onclick="toggleEl('monthlyBreakdownContainer')">📋 Detailed Report Table</button>
+    <div id="monthlyBreakdownContainer" class="hidden" style="margin-top:16px; text-align:left;">
+        <h3 style="margin-bottom:14px;">Detailed Monthly Statement</h3>
+        <table id="monthlyTable">
+            <thead><tr><th>Month</th><th>Total (€)</th><th>Performance (€)</th></tr></thead>
+            <tbody id="monthlyBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    let charts = {};
+    let currentTheme = 'dark';
+
+    function toggleTheme() {
+        document.body.classList.toggle('light-theme');
+        currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+        updateChartsTheme();
+    }
+
+    function updateChartsTheme() {
+        const textColor = currentTheme === 'dark' ? '#e8eaf2' : '#111827';
+        const gridColor = currentTheme === 'dark' ? '#232836' : '#e2e6f0';
+        Chart.defaults.color = textColor;
+        for (let key in charts) {
+            const chart = charts[key];
+            if (chart.options.scales) {
+                if (chart.options.scales.x) chart.options.scales.x.grid.color = gridColor;
+                if (chart.options.scales.y) chart.options.scales.y.grid.color = gridColor;
+            }
+            chart.update();
+        }
+    }
+
+    function formatEuro(val) {
+        return new Intl.NumberFormat('el-GR', { style: 'currency', currency: 'EUR' }).format(val);
+    }
+
+    function toggleEl(id) {
+        document.getElementById(id).classList.toggle('hidden');
+    }
+
+    function resetPage() {
+        if (confirm("Καθαρισμός δεδομένων;")) location.reload();
+    }
+
+    function processData() {
+        const input = document.getElementById('dataInput').value.trim();
+        if (!input) return alert("Επικολλήστε δεδομένα.");
+
+        const lines = input.split('\n');
+        const labels = { Employee: 'Τακτικές', EmployeeExtra: 'Έκτακτες', Company: 'Εργοδότης', Bonus: 'Bonus', ROI: 'Απόδοση', Redistribution: 'Αναδιανομή' };
+        const totals = { Employee: 0, EmployeeExtra: 0, Company: 0, Bonus: 0, ROI: 0, Redistribution: 0 };
+        const monthly = {};
+
+        lines.forEach(line => {
+            const cols = line.split('\t').map(c => c.trim());
+            if (cols.length < 5) return;
+
+            let rawAmt = cols[5] || "0";
+            let isNeg = rawAmt.includes('(');
+            let amt = parseFloat(rawAmt.replace(/[()€\s]/g, '').replace(/\./g, '').replace(',', '.'));
+            if (isNaN(amt)) amt = 0;
+            if (isNeg) amt = -amt;
+
+            let group = null;
+            const combo = `${cols[1]}-${cols[4]}`;
+            if (combo.includes('Τακτική Εισφορά') && combo.includes('Εργατικές')) group = 'Employee';
+            else if (combo.includes('Έκτακτη Εισφορά') && combo.includes('Εργατικές')) group = 'EmployeeExtra';
+            else if (combo.includes('Τακτική Εισφορά') && combo.includes('Τακτικές Εργοδοτικές')) group = 'Company';
+            else if (combo.includes('Έκτακτη Εισφορά') && combo.includes('Έκτακτες Εργοδοτικές')) group = 'Bonus';
+            else if (combo.includes('Απόδοση Επενδύσεων')) group = 'ROI';
+            else if (combo.includes('Αναδιανομή')) group = 'Redistribution';
+
+            if (group) totals[group] += amt;
+
+            const d = cols[0].split('/');
+            if (d.length === 3) {
+                const mKey = `${d[2]}-${d[1]}`;
+                if (!monthly[mKey]) monthly[mKey] = { total: 0, roi: 0 };
+                monthly[mKey].total += amt;
+                if (group === 'ROI') monthly[mKey].roi += amt;
+            }
+        });
+
+        renderReport(totals, labels, monthly);
+    }
+
+    function renderReport(totals, labels, monthly) {
+        document.getElementById('reportCapture').classList.remove('hidden');
+        document.getElementById('exportBtn').style.display = 'flex';
+        document.getElementById('reportDate').innerText = "Δημιουργήθηκε: " + new Date().toLocaleDateString('el-GR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+        const tBody = document.getElementById('totalsBody'); tBody.innerHTML = '';
+        let sum = 0;
+        for (let k in totals) {
+            sum += totals[k];
+            tBody.innerHTML += `<tr><td style="color:var(--text-soft)">${labels[k]}</td><td class="${totals[k] < 0 ? 'negative' : ''}" style="font-family:'DM Mono',monospace; text-align:right">${formatEuro(totals[k])}</td></tr>`;
+        }
+        const contrib = sum - totals.ROI;
+        const roiP = contrib > 0 ? (totals.ROI / contrib) * 100 : 0;
+        document.getElementById('grandTotal').innerHTML = `<span>Σύνολο</span><span class="${sum < 0 ? 'negative' : ''}">${formatEuro(sum)}</span>`;
+        document.getElementById('roiPercent').innerHTML = `<span>ROI</span><span class="${roiP < 0 ? 'negative' : ''}">${roiP.toFixed(2)}%</span>`;
+
+        const mArr = Object.entries(monthly);
+        const bestR = [...mArr].sort((a, b) => b[1].roi - a[1].roi).slice(0, 10);
+        const worstR = [...mArr].sort((a, b) => a[1].roi - b[1].roi).slice(0, 10);
+
+        const fillList = (id, data) => {
+            const el = document.getElementById(id); el.innerHTML = '';
+            data.forEach(([m, v]) => {
+                el.innerHTML += `<li><span>${m}</span><span class="${v.roi < 0 ? 'negative' : ''}">${formatEuro(v.roi)}</span></li>`;
+            });
+        };
+        fillList('bestRoiMonths', bestR);
+        fillList('worstRoiMonths', worstR);
+
+        renderPie(totals, labels);
+        const sortedM = Object.keys(monthly).sort();
+        renderBar('monthlyChart', sortedM, sortedM.map(m => monthly[m].total), 'rgba(79,142,247,0.8)');
+        renderBar('monthlyROIChart', sortedM, sortedM.map(m => monthly[m].roi), 'rgba(247,193,79,0.85)');
+
+        const mBody = document.getElementById('monthlyBody'); mBody.innerHTML = '';
+        [...sortedM].reverse().forEach(m => {
+            mBody.innerHTML += `<tr><td style="font-family:'DM Mono',monospace">${m}</td><td class="${monthly[m].total < 0 ? 'negative' : ''}" style="font-family:'DM Mono',monospace">${formatEuro(monthly[m].total)}</td><td class="${monthly[m].roi < 0 ? 'negative' : ''}" style="font-family:'DM Mono',monospace">${formatEuro(monthly[m].roi)}</td></tr>`;
+        });
+    }
+
+    function renderPie(totals, labels) {
+        if (charts.pie) charts.pie.destroy();
+        const values = Object.values(totals).map(v => Math.max(0, v));
+        const totalSum = values.reduce((a, b) => a + b, 0);
+        const isDark = currentTheme === 'dark';
+
+        charts.pie = new Chart(document.getElementById('groupChart'), {
+            type: 'pie',
+            data: {
+                labels: Object.values(labels),
+                datasets: [{
+                    data: values,
+                    backgroundColor: [
+                        'rgba(79,142,247,0.85)',
+                        'rgba(247,193,79,0.85)',
+                        'rgba(79,212,160,0.85)',
+                        'rgba(167,139,250,0.85)',
+                        'rgba(251,146,60,0.85)',
+                        'rgba(247,79,106,0.85)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: isDark ? '#111318' : '#ffffff',
+                    hoverOffset: 18,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                layout: { padding: { top: 60, bottom: 60, left: 80, right: 80 } },
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        clip: false,
+                        color: isDark ? '#fff' : '#111',
+                        font: { weight: 'bold', size: 10, family: 'DM Sans' },
+                        formatter: (value, ctx) => {
+                            let pct = (value * 100 / totalSum).toFixed(1) + "%";
+                            let lbl = ctx.chart.data.labels[ctx.dataIndex];
+                            return `${lbl}\n${pct}\n(${formatEuro(value)})`;
+                        },
+                        align: 'end',
+                        anchor: 'end',
+                        offset: 12,
+                        textAlign: 'center',
+                        textShadowColor: 'rgba(0,0,0,0.6)',
+                        textShadowBlur: 6,
+                    }
+                }
+            }
+        });
+    }
+
+    function renderBar(id, labels, data, color) {
+        if (charts[id]) charts[id].destroy();
+        const isDark = currentTheme === 'dark';
+        const gridColor = isDark ? '#232836' : '#e2e6f0';
+        const textColor = isDark ? '#6b7280' : '#9ca3af';
+
+        charts[id] = new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: data.map(v => v >= 0 ? color : 'rgba(247,79,106,0.8)'),
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { family: 'DM Mono', size: 10 }, maxRotation: 45 }
+                    },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { family: 'DM Mono', size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function exportToImage() {
+        const btn = document.getElementById('exportBtn'); btn.innerText = "⏳ Εξαγωγή…";
+        html2canvas(document.getElementById('reportCapture'), {
+            scale: 2,
+            backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg')
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `TEA-Report.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            btn.innerHTML = "🖼️ Εξαγωγή PNG";
+        });
+    }
+</script>
+
+</body>
+</html>

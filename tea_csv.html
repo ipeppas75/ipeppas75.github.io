@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEA CSV Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0d0f12;
+            --surface: #141720;
+            --surface-raised: #1c2030;
+            --border: #252a3a;
+            --border-active: #3d4a6b;
+            --accent: #4fc3f7;
+            --accent-glow: rgba(79, 195, 247, 0.15);
+            --accent-dim: rgba(79, 195, 247, 0.5);
+            --green: #69f0ae;
+            --green-glow: rgba(105, 240, 174, 0.12);
+            --text-primary: #e8ecf4;
+            --text-secondary: #7a8499;
+            --text-muted: #4a5168;
+            --mono: 'DM Mono', monospace;
+            --display: 'Syne', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: var(--mono);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(79, 195, 247, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79, 195, 247, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Top glow orb */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
+            height: 400px;
+            background: radial-gradient(ellipse at center, rgba(79, 195, 247, 0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 780px;
+            position: relative;
+            z-index: 1;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 14px 5px 10px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-family: var(--display);
+            font-size: clamp(32px, 6vw, 52px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            color: var(--text-primary);
+        }
+
+        h1 span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            margin-top: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Instructions card */
+        .instructions {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeUp 0.6s ease 0.1s both;
+        }
+
+        .instructions::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--accent), transparent);
+        }
+
+        .instructions-label {
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .steps {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .steps li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent-dim);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        /* Textarea section */
+        .textarea-wrap {
+            position: relative;
+            margin-bottom: 20px;
+            animation: fadeUp 0.6s ease 0.2s both;
+        }
+
+        .textarea-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .textarea-label span {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .char-count {
+            font-size: 11px;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .char-count.active {
+            color: var(--accent);
+        }
+
+        textarea {
+            width: 100%;
+            height: 280px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            color: var(--text-primary);
+            font-family: var(--mono);
+            font-size: 12.5px;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            caret-color: var(--accent);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        textarea:focus {
+            border-color: var(--border-active);
+            box-shadow: 0 0 0 3px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.02);
+            background: var(--surface-raised);
+        }
+
+        /* Button */
+        .btn-wrap {
+            animation: fadeUp 0.6s ease 0.3s both;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px 28px;
+            background: transparent;
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            color: var(--green);
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--green-glow);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        button:hover {
+            box-shadow: 0 0 28px rgba(105, 240, 174, 0.18), inset 0 1px 0 rgba(105, 240, 174, 0.1);
+            transform: translateY(-1px);
+        }
+
+        button:hover::before {
+            opacity: 1;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-icon {
+            font-size: 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--surface-raised);
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 16px rgba(105, 240, 174, 0.1);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            color: var(--green);
+            font-size: 16px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            text-align: center;
+            animation: fadeUp 0.6s ease 0.4s both;
+        }
+
+        .footer span {
+            color: var(--border-active);
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header class="header">
+        <div class="header-badge">
+            <div class="badge-dot"></div>
+            Data Utility
+        </div>
+        <h1>TEA <span>CSV</span><br>Converter</h1>
+        <p class="subtitle">Μετατροπή δεδομένων σε μορφή CSV για το TEA</p>
+    </header>
+
+    <div class="instructions">
+        <div class="instructions-label">Οδηγίες χρήσης</div>
+        <ol class="steps">
+            <li>
+                <div class="step-num">1</div>
+                <span>Αντιγράψτε τα δεδομένα από την πηγή σας (π.χ. από ιστοσελίδα ή Excel).</span>
+            </li>
+            <li>
+                <div class="step-num">2</div>
+                <span>Επικολλήστε τα στο παρακάτω πεδίο εισαγωγής.</span>
+            </li>
+            <li>
+                <div class="step-num">3</div>
+                <span>Πατήστε "Μετατροπή & Λήψη CSV" για να κατεβάσετε το αρχείο.</span>
+            </li>
+        </ol>
+    </div>
+
+    <div class="textarea-wrap">
+        <div class="textarea-label">
+            <span>Input Data</span>
+            <span class="char-count" id="charCount">0 χαρακτήρες</span>
+        </div>
+        <textarea
+            id="inputData"
+            placeholder="Επικολλήστε τα δεδομένα εδώ..."
+            oninput="updateCount()"
+            spellcheck="false"
+        ></textarea>
+    </div>
+
+    <div class="btn-wrap">
+        <button onclick="convertData()">
+            <span class="btn-icon">↓</span>
+            <span class="btn-text">Μετατροπή &amp; Λήψη CSV</span>
+        </button>
+    </div>
+
+    <div class="footer">
+        TEA CSV Converter <span>·</span> UTF-8 BOM encoded <span>·</span> Semicolon delimited
+    </div>
+</div>
+
+<div class="toast" id="toast">
+    <span class="toast-icon">✓</span>
+    <span>Το αρχείο CSV λήφθηκε!</span>
+</div>
+
+<script>
+    function updateCount() {
+        const ta = document.getElementById('inputData');
+        const count = ta.value.length;
+        const el = document.getElementById('charCount');
+        el.textContent = count.toLocaleString('el-GR') + ' χαρακτήρες';
+        el.classList.toggle('active', count > 0);
+    }
+
+    function showToast() {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function convertData() {
+        const input = document.getElementById('inputData').value.trim();
+        if (!input) {
+            alert("Παρακαλώ εισάγετε δεδομένα.");
+            return;
+        }
+
+        const lines = input.split('\n');
+        let csvContent = "Date;Category;Period;Notes;Source;Amount\r\n";
+
+        lines.forEach(line => {
+            // Split by tabs (usual for copy-paste from tables)
+            let cols = line.split('\t');
+            
+            // If tabs don't exist, try splitting by multiple spaces
+            if (cols.length < 2) {
+                cols = line.split(/\s{2,}/);
+            }
+
+            if (cols.length >= 4) {
+                // Extract and clean fields
+                let date = cols[0].trim();
+                let category = cols[1].trim();
+                let period = cols[2] ? cols[2].trim() : "";
+                
+                // Logic to handle Source and Amount positions
+                // Usually: Date, Category, Period, (Notes empty), Source, Amount
+                let source = "";
+                let rawAmount = "";
+
+                if (cols.length === 5) {
+                    // Case: Date, Category, Period, Source, Amount
+                    source = cols[3].trim();
+                    rawAmount = cols[4].trim();
+                } else if (cols.length >= 6) {
+                    // Case: Date, Category, Period, Notes, Source, Amount
+                    source = cols[4].trim();
+                    rawAmount = cols[5].trim();
+                }
+
+                // Format Amount: handle (€1.234,56) -> -€ 1.234,56
+                let formattedAmount = rawAmount;
+                if (formattedAmount.includes('(')) {
+                    formattedAmount = "-" + formattedAmount.replace('(', '').replace(')', '');
+                }
+                
+                // Ensure space after € symbol as per your sample: € 132,57
+                if (formattedAmount.includes('€') && !formattedAmount.includes('€ ')) {
+                    formattedAmount = formattedAmount.replace('€', '€ ');
+                }
+
+                // Clean the period backslash if necessary (your sample uses 2026\01)
+                period = period.replace('/', '\\');
+
+                // Construct CSV line
+                // Date;Category;Period;Notes;Source;Amount
+                const csvRow = [
+                    date,
+                    category,
+                    period,
+                    "", // Notes is usually empty in your sample
+                    source,
+                    formattedAmount
+                ].join(';');
+
+                csvContent += csvRow + "\r\n";
+            }
+        });
+
+        downloadCSV(csvContent);
+        showToast();
+    }
+
+    function downloadCSV(content) {
+        // Add UTF-8 BOM for Excel compatibility
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        const timestamp = new Date().toISOString().slice(0,10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `tea_export_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
