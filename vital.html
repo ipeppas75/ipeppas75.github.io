@@ -353,6 +353,24 @@ input,select{font-family:inherit}
 #toast.sage{background:var(--sage);color:#fff}
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
+/* ntfy setup banner */
+.ntfy-banner{
+  background:var(--sage-l);border:1px solid var(--sage-b);
+  border-radius:var(--r-md);padding:11px 13px;
+  font-size:12px;color:var(--ink2);line-height:1.6;
+  margin-bottom:14px;
+}
+.ntfy-banner strong{color:var(--sage);font-weight:600}
+.ntfy-status{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 12px;border-radius:var(--r-md);
+  background:var(--surface2);border:1px solid var(--border);
+  font-size:12px;color:var(--ink2);margin-bottom:12px;
+}
+.ntfy-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0}
+.ntfy-dot.active{background:var(--sage)}
+.ntfy-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+
 /* Confirm dialog */
 .confirm-msg{font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:18px;font-weight:400;max-width:100%}
 </style>
@@ -658,9 +676,30 @@ input,select{font-family:inherit}
     </div>
 
     <!-- Supplement reminders summary -->
-    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
       <div class="field-label" style="margin-bottom:8px">Supplement reminders</div>
       <div id="suppRemindersSummary" style="font-size:12px;color:var(--ink2);font-weight:400;line-height:1.8"></div>
+    </div>
+
+    <!-- ntfy.sh background notifications -->
+    <div class="ntfy-section">
+      <div class="field-label" style="margin-bottom:6px">Background notifications <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--sage)">(iPhone fix)</span></div>
+      <div class="ntfy-banner">
+        Get notified even when the app is closed.<br>
+        <strong>1.</strong> Install the free <strong>ntfy</strong> app from the App Store<br>
+        <strong>2.</strong> Enter a unique topic name below<br>
+        <strong>3.</strong> Subscribe to that topic in the ntfy app
+      </div>
+      <div class="ntfy-status" id="ntfyStatus">
+        <div class="ntfy-dot" id="ntfyDot"></div>
+        <span id="ntfyStatusText">Not configured</span>
+      </div>
+      <label class="field-label">Your ntfy topic</label>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input class="field-input" type="text" id="ntfyTopicInput" placeholder="e.g. vital-yourname-1234" style="margin-bottom:0;flex:1;font-size:13px">
+        <button class="log-dose-btn" style="height:46px;padding:0 14px;white-space:nowrap" onclick="saveNtfyTopic()">Save</button>
+      </div>
+      <button class="preset-chip" style="font-size:11px" onclick="testNtfy()">Send test notification</button>
     </div>
 
     <button class="btn-primary" style="margin-top:18px" onclick="saveNotifAndClose()">Done</button>
@@ -673,12 +712,13 @@ input,select{font-family:inherit}
 /* ══════════════════════════════════════════
    KEYS & STATE
 ══════════════════════════════════════════ */
-const K={water:'VT_W',date:'VT_D',goal:'VT_G',log:'VT_L',streak:'VT_ST',supps:'VT_S',sdoses:'VT_SD',schecks:'VT_SC',notif:'VT_N',theme:'VT_T'};
+const K={water:'VT_W',date:'VT_D',goal:'VT_G',log:'VT_L',streak:'VT_ST',supps:'VT_S',sdoses:'VT_SD',schecks:'VT_SC',notif:'VT_N',theme:'VT_T',ntfy:'VT_NTFY'};
 let water=0,GOAL=3500,waterLog=[],lastWater=0,wasOver=false;
 let supplements=[],suppDoses={},suppChecks={};
 let notif={enabled:false,intervalHours:2,quietEnabled:false,quietStart:'22:00',quietEnd:'07:00'};
 let selInterval=2,reminderTimer=null,toastTimer=null;
 let editSuppId=null,selType='pill',selDays=[],selTime='08:00',selReminderDays=[];
+let ntfyTopic='';
 let suppReminderTimers={};
 
 const THEMES=[
@@ -728,6 +768,7 @@ function init(){
     suppChecks=jp(ls(K.schecks),{});
   }
   supplements=jp(ls(K.supps),[]);
+  ntfyTopic=ls(K.ntfy)||'';
   notif=Object.assign({enabled:false,intervalHours:2,quietEnabled:false,quietStart:'22:00',quietEnd:'07:00'},jp(ls(K.notif),{}));
   selInterval=notif.intervalHours;
 
@@ -738,6 +779,8 @@ function init(){
   loadStreak();updateWaterUI();renderSupps();updateNotifPill();scheduleReminders();scheduleAllSuppReminders();
   checkMissedSuppReminders();
   checkMissedWaterReminder();
+  checkMissedNtfyReminders();
+  scheduleNtfyReminders();
   set('VT_LASTOPEN',Date.now());
   scheduleMidnightReset();
 }
@@ -1145,8 +1188,11 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'){
     checkMissedSuppReminders();
     checkMissedWaterReminder();
+    checkMissedNtfyReminders();
     scheduleAllSuppReminders();
+    scheduleNtfyReminders();
     scheduleReminders();
+    set('VT_LASTOPEN',Date.now());
   }
 });
 
@@ -1196,6 +1242,7 @@ function openNotifSheet(){
   document.getElementById('quietTimesRow').style.display=notif.quietEnabled?'flex':'none';
   document.querySelectorAll('.interval-chip').forEach(c=>c.classList.toggle('sel',parseFloat(c.dataset.v)===selInterval));
   updateSuppRemindersSummary();
+  updateNtfyStatus();
   openSheet('notifSheet');
 }
 function toggleQuietUI(){
@@ -1259,6 +1306,119 @@ function scheduleReminders(){
 function fmtInterval(h){if(h<1)return h*60+' min';if(h===1)return '1 hour';return h+' hours'}
 
 /* ══════════════════════════════════════════
+   NTFY.SH — background push notifications
+══════════════════════════════════════════ */
+function saveNtfyTopic(){
+  const val=document.getElementById('ntfyTopicInput').value.trim().replace(/[^a-zA-Z0-9_-]/g,'');
+  if(!val){showToast('Enter a topic name','warn');return;}
+  ntfyTopic=val;
+  set(K.ntfy,val);
+  updateNtfyStatus();
+  showToast('Topic saved ✓','sage');
+}
+
+function updateNtfyStatus(){
+  const dot=document.getElementById('ntfyDot');
+  const txt=document.getElementById('ntfyStatusText');
+  const inp=document.getElementById('ntfyTopicInput');
+  if(!dot||!txt)return;
+  if(ntfyTopic){
+    dot.className='ntfy-dot active';
+    txt.textContent='Topic: '+ntfyTopic;
+    if(inp)inp.value=ntfyTopic;
+  } else {
+    dot.className='ntfy-dot';
+    txt.textContent='Not configured';
+    if(inp)inp.value='';
+  }
+}
+
+async function sendNtfy(title, body, tags=''){
+  if(!ntfyTopic)return;
+  try {
+    await fetch('https://ntfy.sh/'+encodeURIComponent(ntfyTopic), {
+      method:'POST',
+      headers:{
+        'Title': title,
+        'Priority': 'default',
+        'Tags': tags||'bell',
+        'Content-Type': 'text/plain',
+      },
+      body: body
+    });
+  } catch(e){ console.warn('ntfy send failed',e); }
+}
+
+async function testNtfy(){
+  if(!ntfyTopic){showToast('Save a topic first','warn');return;}
+  await sendNtfy('Vitál — Test 💧','Notifications are working! Your reminders will arrive here.','white_check_mark');
+  showToast('Test sent! Check ntfy app','sage');
+}
+
+// Schedule ntfy notifications using setTimeout (fires while app is open)
+// AND saves "pending" notifications to localStorage so on next open we catch missed ones
+function scheduleNtfyReminders(){
+  if(!ntfyTopic)return;
+  // Schedule supplement reminders
+  supplements.forEach(s=>{
+    if(!s.reminderEnabled)return;
+    if(!suppReminderScheduledToday(s))return;
+    const now=new Date();
+    const [h,m]=(s.reminderTime||'08:00').split(':').map(Number);
+    const target=new Date(now);
+    target.setHours(h,m,0,0);
+    const ms=target.getTime()-now.getTime();
+    if(ms<0)return;
+    setTimeout(async()=>{
+      if(isQuietNow())return;
+      const meta=TYPE_META[s.type]||TYPE_META.pill;
+      await sendNtfy(
+        'Vitál — Time for '+s.name,
+        'Take '+s.dose+' '+meta.unit+(s.notes?' · '+s.notes:''),
+        'pill'
+      );
+    },ms);
+  });
+}
+
+// Check if any ntfy reminders were missed while app was closed
+async function checkMissedNtfyReminders(){
+  if(!ntfyTopic)return;
+  const lastOpen=Number(ls('VT_LASTOPEN')||0);
+  const now=new Date();
+  const today=now.toDateString();
+  const lastOpenDate=lastOpen?new Date(lastOpen).toDateString():null;
+  const nowMins=now.getHours()*60+now.getMinutes();
+  const lastOpenMins=lastOpen&&lastOpenDate===today?new Date(lastOpen).getHours()*60+new Date(lastOpen).getMinutes():0;
+
+  for(const s of supplements){
+    if(!s.reminderEnabled)continue;
+    if(!suppReminderScheduledToday(s))continue;
+    const [h,m]=(s.reminderTime||'08:00').split(':').map(Number);
+    const reminderMins=h*60+m;
+    const passedToday=nowMins>=reminderMins;
+    const missed=lastOpenDate!==today||(lastOpenDate===today&&lastOpenMins<reminderMins);
+    const alreadyDone=suppChecks[s.id];
+    if(passedToday&&missed&&!alreadyDone&&!isQuietNow()){
+      const meta=TYPE_META[s.type]||TYPE_META.pill;
+      await sendNtfy(
+        'Vitál — Missed reminder: '+s.name,
+        'Reminder was at '+(s.reminderTime||'08:00')+'. Take '+s.dose+' '+meta.unit+(s.notes?' · '+s.notes:''),
+        'pill'
+      );
+    }
+  }
+  // Water missed check
+  if(notif.enabled&&lastOpen){
+    const gapHours=(Date.now()-lastOpen)/3600000;
+    if(gapHours>=notif.intervalHours&&water<GOAL&&!isQuietNow()){
+      const rem=Math.max(GOAL-water,0);
+      await sendNtfy('Vitál — Hydration reminder',rem.toLocaleString()+' ml to go. Time to drink! 💧','droplet');
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
    MIDNIGHT RESET
 ══════════════════════════════════════════ */
 function scheduleMidnightReset(){
@@ -1294,142 +1454,7 @@ let swReg = null;
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    // Inline SW as blob so no separate file is needed
-    const swCode = `// Vitál Service Worker
-// Handles scheduled notifications via periodic checks
-
-const CACHE = 'vital-v1';
-
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
-});
-
-// Receive schedule messages from the main app
-self.addEventListener('message', e => {
-  const { type, payload } = e.data || {};
-
-  if (type === 'SCHEDULE_NOTIFICATIONS') {
-    // Store the schedule in SW scope
-    self.notifSchedule = payload;
-  }
-
-  if (type === 'CANCEL_ALL') {
-    self.notifSchedule = null;
-    clearAllAlarms();
-  }
-});
-
-// --- Periodic Background Sync (where supported) ---
-self.addEventListener('periodicsync', e => {
-  if (e.tag === 'vital-reminders') {
-    e.waitUntil(checkAndFireReminders());
-  }
-});
-
-// --- Push (fallback, in case server push is added later) ---
-self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {};
-  e.waitUntil(
-    self.registration.showNotification(data.title || 'Vitál', {
-      body: data.body || '',
-      icon: data.icon || '/icon.png',
-      badge: '/icon.png',
-      tag: data.tag || 'vital',
-    })
-  );
-});
-
-// --- Notification click: focus the app ---
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      for (const client of clients) {
-        if (client.url && 'focus' in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow('./');
-    })
-  );
-});
-
-// Check schedule and fire any due notifications
-async function checkAndFireReminders() {
-  const schedule = self.notifSchedule;
-  if (!schedule) return;
-
-  const now = new Date();
-  const todayDow = now.getDay();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-
-  // Water reminder
-  if (schedule.water && schedule.water.enabled) {
-    const lastFired = schedule.water.lastFired || 0;
-    const intervalMs = schedule.water.intervalHours * 3600000;
-    const inQuiet = isQuiet(now, schedule.water);
-    if (!inQuiet && (Date.now() - lastFired) >= intervalMs) {
-      const rem = Math.max(schedule.water.goal - schedule.water.current, 0);
-      const body = schedule.water.current >= schedule.water.goal
-        ? 'Goal hit today! Great work 🎉'
-        : \`\${rem.toLocaleString()} ml to go. Time to drink! 💧\`;
-      await self.registration.showNotification('Vitál — Hydration reminder', {
-        body, tag: 'water-reminder', icon: '/icon.png'
-      });
-      // Update lastFired via client message
-      notifyClients({ type: 'WATER_FIRED', ts: Date.now() });
-    }
-  }
-
-  // Supplement reminders
-  if (schedule.supplements) {
-    for (const s of schedule.supplements) {
-      if (!s.reminderEnabled) continue;
-      const days = s.reminderDays && s.reminderDays.length ? s.reminderDays
-        : s.days && s.days.length ? s.days : null;
-      if (days && !days.includes(todayDow)) continue;
-      const inQuiet = isQuiet(now, schedule.water);
-      if (inQuiet) continue;
-      const [h, m] = (s.reminderTime || '08:00').split(':').map(Number);
-      const reminderMins = h * 60 + m;
-      const windowStart = reminderMins;
-      const windowEnd = reminderMins + 60; // 60 min window
-      if (nowMins >= windowStart && nowMins < windowEnd) {
-        const lastTag = \`supp-\${s.id}-\${now.toDateString()}\`;
-        // Use tag to avoid duplicate notifications on same day
-        await self.registration.showNotification(\`Vitál — Time for \${s.name}\`, {
-          body: \`Take \${s.dose} \${s.unit}\${s.notes ? ' · ' + s.notes : ''}\`,
-          tag: lastTag, icon: '/icon.png'
-        });
-      }
-    }
-  }
-}
-
-function isQuiet(now, waterConfig) {
-  if (!waterConfig || !waterConfig.quietEnabled) return false;
-  const [sh, sm] = (waterConfig.quietStart || '22:00').split(':').map(Number);
-  const [eh, em] = (waterConfig.quietEnd || '07:00').split(':').map(Number);
-  const cur = now.getHours() * 60 + now.getMinutes();
-  const start = sh * 60 + sm, end = eh * 60 + em;
-  if (start > end) return cur >= start || cur < end;
-  return cur >= start && cur < end;
-}
-
-async function notifyClients(msg) {
-  const clients = await self.clients.matchAll({ includeUncontrolled: true });
-  clients.forEach(c => c.postMessage(msg));
-}
-
-function clearAllAlarms() {
-  // placeholder for future alarm API
-}
-`;
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(swBlob);
-    swReg = await navigator.serviceWorker.register(swUrl, { scope: './' });
+    swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
     await navigator.serviceWorker.ready;
 
     // Try to register periodic sync (Chrome/Android)
