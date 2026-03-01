@@ -1078,6 +1078,8 @@ function saveSupp(){
   else{supplements.push({id:uid(),...obj})}
   set(K.supps,supplements);closeSheet('addSuppSheet');renderSupps();
   scheduleAllSuppReminders();
+  clearNtfyScheduleCache();
+  scheduleNtfyReminders();
   showToast(editSuppId?'Supplement updated':'Supplement added ✓','sage');
 }
 function deleteSupp(){
@@ -1333,17 +1335,15 @@ function updateNtfyStatus(){
   }
 }
 
-async function sendNtfy(title, body, tags=''){
+async function sendNtfy(title, body, tags='', delayTs=null){
   if(!ntfyTopic)return;
   try {
     const topic=encodeURIComponent(ntfyTopic.trim());
     const t=encodeURIComponent(title);
     const tg=encodeURIComponent(tags||'bell');
-    const url=`https://ntfy.sh/${topic}?title=${t}&priority=default&tags=${tg}`;
-    const resp = await fetch(url, {
-      method:'POST',
-      body: body
-    });
+    let url=`https://ntfy.sh/${topic}?title=${t}&priority=default&tags=${tg}`;
+    if(delayTs) url+=`&delay=${delayTs}`; // Unix timestamp — ntfy server delivers at that time
+    const resp = await fetch(url, {method:'POST', body});
     console.log('ntfy response:', resp.status, resp.statusText);
     return resp.ok;
   } catch(e){
@@ -1363,30 +1363,79 @@ async function testNtfy(){
   }
 }
 
-// Schedule ntfy notifications using setTimeout (fires while app is open)
-// AND saves "pending" notifications to localStorage so on next open we catch missed ones
-function scheduleNtfyReminders(){
+// Pre-schedule ntfy reminders using ntfy's server-side delay
+// The HTTP request is sent NOW, ntfy.sh holds it and delivers at the right time
+// This works even when phone is locked — the server sends it, not the browser JS
+async function scheduleNtfyReminders(){
   if(!ntfyTopic)return;
-  // Schedule supplement reminders
-  supplements.forEach(s=>{
-    if(!s.reminderEnabled)return;
-    if(!suppReminderScheduledToday(s))return;
-    const now=new Date();
+  const now=new Date();
+  const scheduledKey='VT_NTFY_SCHED';
+  const todayStr=now.toDateString();
+
+  // Only reschedule once per day (avoid duplicate scheduled messages)
+  const lastSched=jp(ls(scheduledKey),{});
+  
+  for(const s of supplements){
+    if(!s.reminderEnabled)continue;
+    if(!suppReminderScheduledToday(s))continue;
+    
+    const schedKey=s.id+'_'+todayStr;
+    if(lastSched[schedKey])continue; // already scheduled today
+    
     const [h,m]=(s.reminderTime||'08:00').split(':').map(Number);
     const target=new Date(now);
     target.setHours(h,m,0,0);
-    const ms=target.getTime()-now.getTime();
-    if(ms<0)return;
-    setTimeout(async()=>{
-      if(isQuietNow())return;
-      const meta=TYPE_META[s.type]||TYPE_META.pill;
-      await sendNtfy(
-        'Vitál — Time for '+s.name,
-        'Take '+s.dose+' '+meta.unit+(s.notes?' · '+s.notes:''),
-        'pill'
-      );
-    },ms);
-  });
+    if(target<=now)continue; // already passed
+
+    if(isQuietAtTime(target))continue;
+
+    const meta=TYPE_META[s.type]||TYPE_META.pill;
+    const delayTs=Math.floor(target.getTime()/1000); // Unix timestamp
+    const ok=await sendNtfy(
+      'Vitál — Time for '+s.name,
+      'Take '+s.dose+' '+meta.unit+(s.notes?' · '+s.notes:''),
+      'pill',
+      delayTs
+    );
+    if(ok){
+      lastSched[schedKey]=true;
+      set(scheduledKey,lastSched);
+      console.log('Scheduled ntfy for',s.name,'at',target.toLocaleTimeString());
+    }
+  }
+
+  // Water reminders — schedule next N reminders for today
+  if(notif.enabled){
+    const waterKey='water_'+todayStr;
+    if(!lastSched[waterKey]){
+      const intervalMs=notif.intervalHours*3600000;
+      let next=new Date(now.getTime()+intervalMs);
+      const midnight=new Date(now); midnight.setHours(24,0,0,0);
+      let count=0;
+      while(next<midnight && count<8){
+        if(!isQuietAtTime(next)){
+          const delayTs=Math.floor(next.getTime()/1000);
+          await sendNtfy('Vitál — Hydration reminder','Time to drink! 💧 Track in Vitál','droplet',delayTs);
+          count++;
+        }
+        next=new Date(next.getTime()+intervalMs);
+      }
+      if(count>0){
+        lastSched[waterKey]=true;
+        set(scheduledKey,lastSched);
+      }
+    }
+  }
+}
+
+function isQuietAtTime(date){
+  if(!notif.quietEnabled)return false;
+  const [sh,sm]=notif.quietStart.split(':').map(Number);
+  const [eh,em]=notif.quietEnd.split(':').map(Number);
+  const cur=date.getHours()*60+date.getMinutes();
+  const start=sh*60+sm,end=eh*60+em;
+  if(start>end)return cur>=start||cur<end;
+  return cur>=start&&cur<end;
 }
 
 // Check if any ntfy reminders were missed while app was closed
@@ -1426,6 +1475,10 @@ async function checkMissedNtfyReminders(){
   }
 }
 
+function clearNtfyScheduleCache(){
+  set('VT_NTFY_SCHED','{}');
+}
+
 /* ══════════════════════════════════════════
    MIDNIGHT RESET
 ══════════════════════════════════════════ */
@@ -1437,6 +1490,7 @@ function scheduleMidnightReset(){
   setTimeout(()=>{
     // Reset daily data
     water=0;waterLog=[];suppDoses={};suppChecks={};lastWater=0;wasOver=false;
+    clearNtfyScheduleCache();
     const today=new Date().toDateString();
     set(K.date,today);set(K.water,0);set(K.log,'[]');set(K.sdoses,'{}');set(K.schecks,'{}');
     // Refresh UI
