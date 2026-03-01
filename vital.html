@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vitál">
+<title>Vitál</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   THEMES
+══════════════════════════════════════════ */
+:root {
+  --safe-top:    env(safe-area-inset-top,0px);
+  --safe-bottom: env(safe-area-inset-bottom,0px);
+  --r-sm:14px; --r-md:20px; --r-lg:28px; --r-xl:36px; --r-full:100px;
+  /* accent colours (shared across themes) */
+  --sage:       #6BAF7E; --sage-d:#4A8A5C; --sage-l:rgba(107,175,126,.15); --sage-b:rgba(107,175,126,.35);
+  --rose:       #C4847A; --rose-l:rgba(196,132,122,.15); --rose-b:rgba(196,132,122,.35);
+  --amber:      #C49A5A; --amber-l:rgba(196,154,90,.15); --amber-b:rgba(196,154,90,.35);
+  --sky:        #7A9EC4; --sky-l:rgba(122,158,196,.15); --sky-b:rgba(122,158,196,.35);
+  --warn:       #D4804A; --warn-l:rgba(212,128,74,.15);
+  --success:    #5A9E72;
+}
+
+/* ── DARK (default) ── */
+[data-theme="dark"] {
+  --bg:       #111210; --bg2:      #1A1C19;
+  --surface:  #1F221E; --surface2: #252825;
+  --border:   #2E322D; --border2:  #3A3F39;
+  --ink:      #EAE8E3; --ink2:     #9A9890; --ink3:     #5E5D58;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.4); --shadow-md:0 4px 20px rgba(0,0,0,.5); --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+}
+/* ── LIGHT ── */
+[data-theme="light"] {
+  --bg:       #F7F4EF; --bg2:      #EDE9E1;
+  --surface:  #FFFFFF; --surface2: #F2EEE8;
+  --border:   #E4DDD3; --border2:  #D5CCC0;
+  --ink:      #2C2825; --ink2:     #6B6259; --ink3:     #9E9188;
+  --shadow-sm:0 1px 4px rgba(44,40,37,.06); --shadow-md:0 4px 20px rgba(44,40,37,.09); --shadow-lg:0 12px 40px rgba(44,40,37,.13);
+}
+/* ── MIDNIGHT ── */
+[data-theme="midnight"] {
+  --bg:       #070B14; --bg2:      #0D1220;
+  --surface:  #111929; --surface2: #162034;
+  --border:   #1E2D42; --border2:  #28405E;
+  --ink:      #DDE8F5; --ink2:     #7A9AB8; --ink3:     #3E5A78;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.5); --shadow-md:0 4px 20px rgba(0,0,0,.6); --shadow-lg:0 12px 40px rgba(0,0,0,.7);
+  --sage:#5B9FD4; --sage-d:#3A7CB8; --sage-l:rgba(91,159,212,.15); --sage-b:rgba(91,159,212,.35);
+}
+/* ── WARM ── */
+[data-theme="warm"] {
+  --bg:       #F5F0E8; --bg2:      #EDE5D8;
+  --surface:  #FBF8F2; --surface2: #F2EBE0;
+  --border:   #E8DDD0; --border2:  #D8CCBC;
+  --ink:      #3A2E22; --ink2:     #7A6A58; --ink3:     #AE9D8C;
+  --shadow-sm:0 1px 4px rgba(58,46,34,.07); --shadow-md:0 4px 20px rgba(58,46,34,.1); --shadow-lg:0 12px 40px rgba(58,46,34,.14);
+  --sage:#B87A4E; --sage-d:#8C5A30; --sage-l:rgba(184,122,78,.15); --sage-b:rgba(184,122,78,.35);
+}
+/* ── FOREST ── */
+[data-theme="forest"] {
+  --bg:       #0C1410; --bg2:      #111C16;
+  --surface:  #16231A; --surface2: #1C2C21;
+  --border:   #243A2A; --border2:  #2E4A36;
+  --ink:      #D8EDE0; --ink2:     #7AAB88; --ink3:     #3E6A4E;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.45); --shadow-md:0 4px 20px rgba(0,0,0,.55); --shadow-lg:0 12px 40px rgba(0,0,0,.65);
+}
+
+/* ══════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',sans-serif;font-size:15px;
+  display:flex;flex-direction:column;height:100dvh;
+  transition:background .35s,color .35s;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select{font-family:inherit}
+
+/* ══════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════ */
+.app{display:flex;flex-direction:column;height:100dvh;overflow:hidden;max-width:430px;margin:0 auto;width:100%}
+.statusbar{height:calc(var(--safe-top) + 6px);background:var(--bg);flex-shrink:0;transition:background .35s}
+
+/* ── Header ── */
+.header{padding:0 20px 10px;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0}
+.app-name{font-family:'DM Serif Display',serif;font-size:26px;color:var(--ink);letter-spacing:-.5px;transition:color .35s}
+.app-date{font-size:11px;color:var(--ink3);font-weight:500;margin-top:1px;letter-spacing:.3px;transition:color .35s}
+.header-actions{display:flex;gap:6px;align-items:center}
+
+.pill-btn{
+  height:32px;padding:0 12px;border-radius:var(--r-full);
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;color:var(--ink2);
+  box-shadow:var(--shadow-sm);transition:all .15s;white-space:nowrap;
+}
+.pill-btn:active{transform:scale(.95);background:var(--bg2)}
+.pill-btn svg{flex-shrink:0;stroke:var(--ink2)}
+
+/* ── Tabs ── */
+.tab-bar{
+  display:flex;margin:0 20px 14px;
+  background:var(--surface2);border-radius:var(--r-full);
+  padding:3px;gap:3px;flex-shrink:0;border:1px solid var(--border);
+  transition:background .35s,border-color .35s;
+}
+.tab-btn{
+  flex:1;height:34px;border-radius:var(--r-full);
+  font-size:12px;font-weight:600;color:var(--ink3);
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.tab-btn.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.tab-btn svg{opacity:.5;transition:opacity .2s}
+.tab-btn.active svg{opacity:1}
+
+/* ── Views ── */
+.view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;flex-direction:column;padding-bottom:calc(var(--safe-bottom)+16px)}
+.view.active{display:flex}
+.view::-webkit-scrollbar{display:none}
+
+/* ══════════════════════════════════════════
+   HYDRATION VIEW
+══════════════════════════════════════════ */
+.hydration-hero{padding:0 20px;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:18px}
+.arc-wrap{position:relative;width:196px;height:196px;margin:6px 0 2px}
+.arc-svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.arc-track{fill:none;stroke:var(--border2);stroke-width:9;stroke-linecap:round;transition:stroke .35s}
+.arc-fill{fill:none;stroke:var(--sage);stroke-width:9;stroke-linecap:round;stroke-dasharray:565;stroke-dashoffset:565;transition:stroke-dashoffset 1.4s cubic-bezier(.19,1,.22,1),stroke .5s}
+.arc-fill.over{stroke:var(--warn)}
+.arc-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.arc-ml{font-family:'DM Serif Display',serif;font-size:50px;color:var(--ink);line-height:1;letter-spacing:-2px;transition:color .3s}
+.arc-ml.over{color:var(--warn)}
+.arc-lbl{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;transition:color .35s}
+
+.status-chip{
+  padding:5px 14px;border-radius:var(--r-full);
+  font-size:12px;font-weight:600;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink2);
+  transition:all .3s;display:inline-flex;align-items:center;gap:5px;
+}
+.status-chip.goal{background:var(--sage-l);border-color:var(--sage-b);color:var(--sage)}
+.status-chip.over{background:var(--warn-l);border-color:rgba(212,128,74,.4);color:var(--warn)}
+
+.log-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 20px;margin-bottom:14px}
+.log-btn{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:16px 8px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  box-shadow:var(--shadow-sm);transition:all .15s;
+}
+.log-btn:active{transform:scale(.92);border-color:var(--sage-b)}
+.log-btn-ico{width:42px;height:42px;border-radius:50%;background:var(--sage-l);display:flex;align-items:center;justify-content:center;font-size:20px;transition:background .35s}
+.log-btn-lbl{font-size:12px;font-weight:600;color:var(--ink2);transition:color .35s}
+
+.undo-row{display:flex;align-items:center;justify-content:center;height:26px;margin-bottom:6px}
+.undo-btn{
+  display:flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;color:var(--ink3);
+  padding:3px 10px;border-radius:var(--r-full);
+  opacity:0;pointer-events:none;transform:translateY(4px);
+  transition:opacity .2s,transform .2s,color .2s;
+}
+.undo-btn.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+.undo-btn:active{color:var(--sage)}
+
+/* ── Cards ── */
+.section-card{margin:0 20px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:background .35s,border-color .35s}
+.section-header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.section-title{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;transition:color .35s}
+.section-action{font-size:11px;font-weight:600;color:var(--sage);cursor:pointer}
+.history-row{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-top:1px solid var(--border);transition:border-color .35s}
+.h-amount{font-weight:700;color:var(--ink);font-size:13px;transition:color .35s}
+.h-time{font-size:11px;color:var(--ink3);font-weight:500;transition:color .35s}
+.history-empty{padding:18px 16px;color:var(--ink3);font-size:12px;text-align:center;transition:color .35s}
+
+.streak-row{margin:0 20px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);transition:all .35s}
+.streak-ico{width:38px;height:38px;border-radius:50%;background:var(--amber-l);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.streak-val{font-size:16px;font-weight:700;color:var(--amber)}
+.streak-lbl{font-size:11px;color:var(--ink3);font-weight:500;margin-top:1px;transition:color .35s}
+
+/* ══════════════════════════════════════════
+   SUPPLEMENTS VIEW
+══════════════════════════════════════════ */
+.supps-header{padding:0 20px 14px;display:flex;align-items:center;justify-content:space-between}
+.supps-summary{font-size:12px;color:var(--ink3);font-weight:500;transition:color .35s}
+.add-btn{
+  height:34px;padding:0 14px;background:var(--sage);color:#fff;
+  border-radius:var(--r-full);font-size:12px;font-weight:700;
+  display:flex;align-items:center;gap:5px;
+  box-shadow:0 4px 12px var(--sage-b);transition:all .15s;
+}
+.add-btn:active{transform:scale(.95)}
+
+/* Supplement cards */
+.supp-card{margin:0 20px 9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:background .35s,border-color .35s}
+.supp-card.inactive{opacity:.5}
+.supp-card-main{display:flex;align-items:center;padding:12px 14px;gap:10px}
+.supp-icon{width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.supp-icon.pill{background:var(--rose-l)}.supp-icon.powder{background:var(--amber-l)}.supp-icon.liquid{background:var(--sky-l)}
+.supp-info{flex:1;min-width:0}
+.supp-name{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .35s}
+.supp-meta{font-size:11px;color:var(--ink3);font-weight:500;margin-top:2px;transition:color .35s}
+.supp-badge{display:inline-flex;align-items:center;gap:3px;background:var(--sage-l);border:1px solid var(--sage-b);color:var(--sage);font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-full);margin-top:3px}
+.supp-badge.not-today{background:var(--border);border-color:var(--border2);color:var(--ink3)}
+
+.supp-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.edit-btn{height:28px;padding:0 10px;border-radius:var(--r-full);font-size:11px;font-weight:600;color:var(--ink3);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;gap:4px;transition:all .15s}
+.edit-btn:active{background:var(--bg2)}
+
+.check-btn{width:34px;height:34px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;background:var(--surface);transition:all .22s cubic-bezier(.34,1.56,.64,1);flex-shrink:0}
+.check-btn.done{background:var(--sage);border-color:var(--sage)}
+.check-btn svg{opacity:0;transform:scale(.5);transition:all .2s}
+.check-btn.done svg{opacity:1;transform:scale(1)}
+.check-btn:active{transform:scale(.88)}
+
+.supp-log-bar{border-top:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:7px;background:var(--bg);transition:background .35s,border-color .35s}
+.supp-log-bar input{flex:1;max-width:90px;height:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:0 10px;font-size:13px;color:var(--ink);font-weight:500;outline:none;transition:border-color .2s,background .35s,color .35s}
+.supp-log-bar input:focus{border-color:var(--sage-b)}
+.supp-unit{font-size:11px;color:var(--ink3);font-weight:600;white-space:nowrap;transition:color .35s}
+.log-dose-btn{height:32px;padding:0 12px;background:var(--sage-l);color:var(--sage);border-radius:var(--r-md);font-size:12px;font-weight:700;border:1px solid var(--sage-b);transition:all .15s}
+.log-dose-btn:active{background:var(--sage-b);transform:scale(.95)}
+
+.supp-logs{padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:5px}
+.supp-log-pill{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-full);padding:2px 9px;font-size:10px;font-weight:600;color:var(--ink2);transition:all .35s}
+
+.supps-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 36px;text-align:center;gap:10px}
+.supps-empty-icon{font-size:48px}
+.supps-empty-title{font-family:'DM Serif Display',serif;font-size:21px;color:var(--ink);transition:color .35s}
+.supps-empty-sub{font-size:13px;color:var(--ink3);line-height:1.55;transition:color .35s}
+
+/* ══════════════════════════════════════════
+   BOTTOM SHEETS
+══════════════════════════════════════════ */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.sheet{
+  width:100%;max-width:430px;
+  background:var(--surface);
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+  padding:0 22px calc(var(--safe-bottom)+26px);
+  animation:slideUp .32s cubic-bezier(.19,1,.22,1);
+  max-height:92dvh;overflow-y:auto;
+  transition:background .35s;
+}
+.sheet::-webkit-scrollbar{display:none}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.drag-pill{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 20px;transition:background .35s}
+.sheet-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:4px;transition:color .35s}
+.sheet-sub{font-size:12px;color:var(--ink3);margin-bottom:18px;font-weight:500;transition:color .35s}
+
+/* Form elements */
+.field-label{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.9px;text-transform:uppercase;margin-bottom:7px;display:block;transition:color .35s}
+.field-input{width:100%;height:48px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-md);padding:0 14px;font-size:15px;color:var(--ink);font-weight:500;outline:none;margin-bottom:14px;transition:border-color .2s,background .35s,color .35s}
+.field-input:focus{border-color:var(--sage-b)}
+.field-select{width:100%;height:48px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-md);padding:0 14px;font-size:15px;color:var(--ink);font-weight:500;outline:none;margin-bottom:14px;transition:border-color .2s,background .35s,color .35s;appearance:none;-webkit-appearance:none}
+.field-select:focus{border-color:var(--sage-b)}
+
+/* Chip grids */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:7px 13px;border-radius:var(--r-full);border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.chip.sel{border-color:var(--sage-b);background:var(--sage-l);color:var(--sage)}
+.chip:active{opacity:.75}
+
+/* Type chips */
+.type-row{display:flex;gap:7px;margin-bottom:14px}
+.type-chip{flex:1;padding:11px 6px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.type-chip .te{font-size:22px}
+.type-chip.sel-pill{border-color:var(--rose-b);background:var(--rose-l);color:var(--rose)}
+.type-chip.sel-powder{border-color:var(--amber-b);background:var(--amber-l);color:var(--amber)}
+.type-chip.sel-liquid{border-color:var(--sky-b);background:var(--sky-l);color:var(--sky)}
+
+/* Day-of-week chips */
+.day-chips{display:flex;gap:5px;margin-bottom:14px}
+.day-chip{flex:1;height:38px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:700;color:var(--ink3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.day-chip.sel{border-color:var(--sage-b);background:var(--sage-l);color:var(--sage)}
+.day-chip:active{opacity:.75}
+
+/* Time input row */
+.time-input-row{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.time-input-row input[type="time"]{flex:1;height:48px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-md);padding:0 14px;font-size:16px;color:var(--ink);font-weight:500;outline:none;transition:border-color .2s,background .35s,color .35s;color-scheme:dark}
+[data-theme="light"] .time-input-row input[type="time"],
+[data-theme="warm"] .time-input-row input[type="time"]{color-scheme:light}
+.time-input-row input[type="time"]:focus{border-color:var(--sage-b)}
+
+/* Preset row */
+.preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.preset-chip{padding:6px 11px;border-radius:var(--r-full);border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.preset-chip:active{background:var(--bg2)}
+
+/* Buttons */
+.btn-primary{width:100%;height:50px;background:var(--sage);color:#fff;border-radius:var(--r-xl);font-size:15px;font-weight:700;box-shadow:0 4px 14px var(--sage-b);transition:all .15s;margin-top:4px}
+.btn-primary:active{transform:scale(.97)}
+.btn-secondary{width:100%;height:44px;background:transparent;color:var(--ink3);border-radius:var(--r-xl);font-size:14px;font-weight:600;margin-top:6px;transition:color .35s}
+.btn-danger{width:100%;height:44px;background:var(--rose-l);color:var(--rose);border-radius:var(--r-xl);font-size:14px;font-weight:700;border:1.5px solid var(--rose-b);margin-top:6px;transition:all .35s}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);transition:border-color .35s}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info{display:flex;flex-direction:column;gap:2px}
+.toggle-label{font-size:14px;font-weight:600;color:var(--ink);transition:color .35s}
+.toggle-sub{font-size:11px;color:var(--ink3);font-weight:500;transition:color .35s}
+.toggle{position:relative;width:46px;height:27px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;cursor:pointer;background:var(--border2);border-radius:14px;transition:background .3s}
+.toggle input:checked+.toggle-track{background:var(--sage)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.toggle input:checked~.toggle-thumb{transform:translateX(19px)}
+
+/* Quiet hours time row */
+.quiet-times{display:flex;gap:8px;margin-top:10px}
+.quiet-time-field{flex:1;display:flex;flex-direction:column;gap:5px}
+.quiet-time-field label{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.7px;text-transform:uppercase;transition:color .35s}
+.quiet-time-field input[type="time"]{width:100%;height:42px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-md);padding:0 12px;font-size:15px;color:var(--ink);outline:none;transition:all .2s;color-scheme:dark}
+[data-theme="light"] .quiet-time-field input[type="time"],
+[data-theme="warm"] .quiet-time-field input[type="time"]{color-scheme:light}
+.quiet-time-field input[type="time"]:focus{border-color:var(--sage-b)}
+
+/* Interval chips */
+.interval-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.interval-chip{padding:7px 13px;border-radius:var(--r-full);border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.interval-chip.sel{border-color:var(--sage-b);background:var(--sage-l);color:var(--sage)}
+
+/* Theme grid */
+.theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 18px}
+.theme-swatch{border-radius:var(--r-md);padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:2px solid transparent;transition:border-color .2s,transform .15s}
+.theme-swatch:active{transform:scale(.92)}
+.theme-swatch.active{border-color:var(--sage)}
+.swatch-dot{width:26px;height:26px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.swatch-lbl{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink2);transition:color .35s}
+
+/* Perm banner */
+.perm-banner{background:var(--warn-l);border:1px solid rgba(212,128,74,.4);border-radius:var(--r-md);padding:10px 12px;font-size:11px;color:var(--warn);font-weight:600;line-height:1.5;margin-bottom:14px;display:none}
+.perm-banner.show{display:block}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+#toast{
+  position:fixed;top:calc(var(--safe-top)+58px);
+  left:50%;transform:translateX(-50%) translateY(-8px);
+  background:var(--ink);color:var(--bg);
+  padding:9px 18px;border-radius:var(--r-full);
+  font-size:12px;font-weight:600;white-space:nowrap;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;
+  z-index:999;box-shadow:var(--shadow-lg);
+}
+#toast.warn{background:var(--warn);color:#fff}
+#toast.sage{background:var(--sage);color:#fff}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="app-name">Vitál</div>
+      <div class="app-date" id="headerDate"></div>
+    </div>
+    <div class="header-actions">
+      <button class="pill-btn" onclick="openThemeSheet()">
+        <svg width="13" height="13" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Theme
+      </button>
+      <button class="pill-btn" onclick="openNotifSheet()" id="notifPill">
+        <svg width="13" height="13" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="notifPillLabel">Reminders</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabH" onclick="switchTab('hydration')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+      Hydration
+    </button>
+    <button class="tab-btn" id="tabS" onclick="switchTab('supps')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+      Supplements
+    </button>
+  </div>
+
+  <!-- ══ HYDRATION ══ -->
+  <div class="view active" id="viewH">
+    <div class="hydration-hero">
+      <div class="arc-wrap">
+        <svg class="arc-svg" viewBox="0 0 200 200">
+          <circle class="arc-track" cx="100" cy="100" r="90"/>
+          <circle class="arc-fill" id="arcFill" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="arc-center">
+          <div class="arc-ml" id="arcMl">0</div>
+          <div class="arc-lbl" id="arcLbl">OF 3,500 ML</div>
+        </div>
+      </div>
+      <div class="status-chip" id="statusChip">3,500 ml to go</div>
+    </div>
+
+    <div class="log-btns">
+      <button class="log-btn" onclick="logWater(250)">
+        <div class="log-btn-ico">☕</div><span class="log-btn-lbl">250 ml</span>
+      </button>
+      <button class="log-btn" onclick="logWater(500)">
+        <div class="log-btn-ico">🥤</div><span class="log-btn-lbl">500 ml</span>
+      </button>
+      <button class="log-btn" onclick="openCustomSheet()">
+        <div class="log-btn-ico">✏️</div><span class="log-btn-lbl">Custom</span>
+      </button>
+    </div>
+
+    <div class="undo-row">
+      <button class="undo-btn" id="undoBtn" onclick="undoWater()">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 5.5 5.5"/></svg>
+        Undo last
+      </button>
+    </div>
+
+    <div class="streak-row" id="streakRow" style="display:none">
+      <div class="streak-ico">🔥</div>
+      <div><div class="streak-val" id="streakVal">0 days</div><div class="streak-lbl">Hydration streak</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Today's Log</span>
+        <span class="section-action" onclick="openGoalSheet()">Edit goal</span>
+      </div>
+      <div id="waterHistory"><div class="history-empty">Nothing logged yet today</div></div>
+    </div>
+  </div>
+
+  <!-- ══ SUPPLEMENTS ══ -->
+  <div class="view" id="viewS">
+    <div class="supps-header">
+      <div class="supps-summary" id="suppsSummary">Your stack</div>
+      <button class="add-btn" onclick="openAddSuppSheet()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add
+      </button>
+    </div>
+    <div id="suppsList"></div>
+  </div>
+</div>
+
+<!-- ══════════ SHEETS ══════════ -->
+
+<!-- Custom water -->
+<div class="overlay" id="customSheet" onclick="closeSheet('customSheet')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="drag-pill"></div>
+    <div class="sheet-title">Log water</div>
+    <div class="sheet-sub">How much did you drink?</div>
+    <div class="preset-row" style="margin-bottom:12px">
+      <button class="preset-chip" onclick="setCustomVal(150)">150 ml</button>
+      <button class="preset-chip" onclick="setCustomVal(330)">330 ml</button>
+      <button class="preset-chip" onclick="setCustomVal(750)">750 ml</button>
+      <button class="preset-chip" onclick="setCustomVal(1000)">1 L</button>
+    </div>
+    <input class="field-input" type="number" id="customWaterInput" inputmode="numeric" placeholder="Amount in ml">
+    <button class="btn-primary" onclick="confirmCustom()">Add to log</button>
+    <button class="btn-secondary" onclick="closeSheet('customSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- Goal -->
+<div class="overlay" id="goalSheet" onclick="closeSheet('goalSheet')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="drag-pill"></div>
+    <div class="sheet-title">Daily goal</div>
+    <div class="sheet-sub">Set your hydration target</div>
+    <div class="preset-row" style="margin-bottom:12px">
+      <button class="preset-chip" onclick="setGoalVal(2000)">2 L</button>
+      <button class="preset-chip" onclick="setGoalVal(2500)">2.5 L</button>
+      <button class="preset-chip" onclick="setGoalVal(3000)">3 L</button>
+      <button class="preset-chip" onclick="setGoalVal(3500)">3.5 L</button>
+      <button class="preset-chip" onclick="setGoalVal(4000)">4 L</button>
+    </div>
+    <input class="field-input" type="number" id="goalInput" inputmode="numeric" placeholder="ml per day">
+    <button class="btn-primary" onclick="saveGoal()">Save goal</button>
+    <button class="btn-secondary" onclick="closeSheet('goalSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- Add / Edit supplement -->
+<div class="overlay" id="addSuppSheet" onclick="closeSheet('addSuppSheet')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="drag-pill"></div>
+    <div class="sheet-title" id="addSuppTitle">Add supplement</div>
+    <div class="sheet-sub">What are you tracking?</div>
+
+    <label class="field-label">Name</label>
+    <input class="field-input" type="text" id="suppName" placeholder="e.g. Vitamin D3">
+
+    <label class="field-label">Type</label>
+    <div class="type-row">
+      <div class="type-chip" id="tc-pill" onclick="selectType('pill')"><span class="te">💊</span>Pill</div>
+      <div class="type-chip" id="tc-powder" onclick="selectType('powder')"><span class="te">🥄</span>Powder</div>
+      <div class="type-chip" id="tc-liquid" onclick="selectType('liquid')"><span class="te">💧</span>Liquid</div>
+    </div>
+
+    <label class="field-label">Default dose</label>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <input class="field-input" type="number" id="suppDose" inputmode="decimal" placeholder="Amount" style="margin-bottom:0;flex:1">
+      <span style="font-size:12px;font-weight:600;color:var(--ink3);white-space:nowrap;transition:color .35s" id="suppUnitLabel">pills</span>
+    </div>
+
+    <label class="field-label">Days of week</label>
+    <div class="day-chips" id="dayChips">
+      <div class="day-chip" data-day="0" onclick="toggleDay(this)">Su</div>
+      <div class="day-chip" data-day="1" onclick="toggleDay(this)">Mo</div>
+      <div class="day-chip" data-day="2" onclick="toggleDay(this)">Tu</div>
+      <div class="day-chip" data-day="3" onclick="toggleDay(this)">We</div>
+      <div class="day-chip" data-day="4" onclick="toggleDay(this)">Th</div>
+      <div class="day-chip" data-day="5" onclick="toggleDay(this)">Fr</div>
+      <div class="day-chip" data-day="6" onclick="toggleDay(this)">Sa</div>
+    </div>
+
+    <label class="field-label">Time of day</label>
+    <div class="time-input-row" style="margin-bottom:14px">
+      <input type="time" id="suppTime" value="08:00">
+      <div style="font-size:12px;color:var(--ink3);font-weight:500;white-space:nowrap">specific time</div>
+    </div>
+
+    <label class="field-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+    <input class="field-input" type="text" id="suppNotes" placeholder="e.g. Take with food">
+
+    <button class="btn-primary" onclick="saveSupp()">Save supplement</button>
+    <div id="deleteSuppWrap" style="display:none">
+      <button class="btn-danger" onclick="deleteSupp()">Delete supplement</button>
+    </div>
+    <button class="btn-secondary" onclick="closeSheet('addSuppSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- Theme sheet -->
+<div class="overlay" id="themeSheet" onclick="closeSheet('themeSheet')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="drag-pill"></div>
+    <div class="sheet-title">Appearance</div>
+    <div class="sheet-sub">Choose your theme</div>
+    <div class="theme-grid" id="themeGrid"></div>
+    <button class="btn-primary" onclick="closeSheet('themeSheet')">Done</button>
+  </div>
+</div>
+
+<!-- Notifications sheet -->
+<div class="overlay" id="notifSheet" onclick="closeSheet('notifSheet')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="drag-pill"></div>
+    <div class="sheet-title">Reminders</div>
+    <div class="sheet-sub">Stay on top of your routine</div>
+
+    <div class="perm-banner" id="permBanner">Notifications are blocked. Please update your browser or device settings to enable reminders.</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-label">Drink reminders</div>
+        <div class="toggle-sub">Get nudged to hydrate throughout the day</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="notifEnabled" onchange="handleNotifToggle()">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <div style="padding:12px 0 0">
+      <div class="field-label">Remind me every</div>
+      <div class="interval-chips">
+        <div class="interval-chip" data-v="0.5" onclick="pickInterval(.5)">30 min</div>
+        <div class="interval-chip" data-v="1"   onclick="pickInterval(1)">1 hour</div>
+        <div class="interval-chip" data-v="1.5" onclick="pickInterval(1.5)">1.5 hr</div>
+        <div class="interval-chip" data-v="2"   onclick="pickInterval(2)">2 hours</div>
+        <div class="interval-chip" data-v="3"   onclick="pickInterval(3)">3 hours</div>
+      </div>
+    </div>
+
+    <div class="toggle-row" style="margin-top:16px">
+      <div class="toggle-info">
+        <div class="toggle-label">Quiet hours</div>
+        <div class="toggle-sub">Silence reminders between set times</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="quietEnabled" onchange="toggleQuietUI()">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <div id="quietTimesRow" class="quiet-times" style="display:none;padding-bottom:4px">
+      <div class="quiet-time-field">
+        <label>From</label>
+        <input type="time" id="quietStart" value="22:00" onchange="saveNotif()">
+      </div>
+      <div class="quiet-time-field">
+        <label>Until</label>
+        <input type="time" id="quietEnd" value="07:00" onchange="saveNotif()">
+      </div>
+    </div>
+
+    <button class="btn-primary" style="margin-top:20px" onclick="saveNotifAndClose()">Done</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   KEYS & STATE
+══════════════════════════════════════════ */
+const K={water:'VT_W',date:'VT_D',goal:'VT_G',log:'VT_L',streak:'VT_ST',supps:'VT_S',sdoses:'VT_SD',schecks:'VT_SC',notif:'VT_N',theme:'VT_T'};
+let water=0,GOAL=3500,waterLog=[],lastWater=0,wasOver=false;
+let supplements=[],suppDoses={},suppChecks={};
+let notif={enabled:false,intervalHours:2,quietEnabled:false,quietStart:'22:00',quietEnd:'07:00'};
+let selInterval=2,reminderTimer=null,toastTimer=null;
+let editSuppId=null,selType='pill',selDays=[],selTime='08:00';
+
+const THEMES=[
+  {id:'dark',   label:'Dark',     bg:'#1F221E', dot:'#6BAF7E'},
+  {id:'light',  label:'Light',    bg:'#FFFFFF', dot:'#7A9E87'},
+  {id:'midnight',label:'Midnight',bg:'#111929', dot:'#5B9FD4'},
+  {id:'warm',   label:'Warm',     bg:'#FBF8F2', dot:'#B87A4E'},
+  {id:'forest', label:'Forest',   bg:'#16231A', dot:'#6BAF7E'},
+];
+const TYPE_META={
+  pill:  {emoji:'💊',label:'Pill',   unit:'pills'},
+  powder:{emoji:'🥄',label:'Powder', unit:'scoops'},
+  liquid:{emoji:'💧',label:'Liquid', unit:'ml'},
+};
+const DAYS=['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+const ls  = k=>localStorage.getItem(k);
+const set = (k,v)=>localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));
+const jp  = (s,fb)=>{try{return s?JSON.parse(s):fb}catch{return fb}};
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function showToast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=type;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+function openSheet(id){document.getElementById(id).classList.add('open')}
+function closeSheet(id){document.getElementById(id).classList.remove('open')}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+function init(){
+  // Theme
+  const savedTheme=ls(K.theme)||'dark';
+  applyTheme(savedTheme,false);
+
+  // Date / reset
+  GOAL=Number(ls(K.goal))||3500;
+  const today=new Date().toDateString();
+  if(ls(K.date)!==today){
+    water=0;waterLog=[];suppDoses={};suppChecks={};
+    set(K.date,today);set(K.water,0);set(K.log,'[]');set(K.sdoses,'{}');set(K.schecks,'{}');
+  } else {
+    water=Number(ls(K.water))||0;
+    waterLog=jp(ls(K.log),[]);
+    suppDoses=jp(ls(K.sdoses),{});
+    suppChecks=jp(ls(K.schecks),{});
+  }
+  supplements=jp(ls(K.supps),[]);
+  notif=Object.assign({enabled:false,intervalHours:2,quietEnabled:false,quietStart:'22:00',quietEnd:'07:00'},jp(ls(K.notif),{}));
+  selInterval=notif.intervalHours;
+
+  if(notif.enabled&&(!('Notification' in window)||Notification.permission!=='granted')){notif.enabled=false;set(K.notif,notif)}
+
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  wasOver=water>GOAL;
+  loadStreak();updateWaterUI();renderSupps();updateNotifPill();scheduleReminders();
+}
+
+/* ══════════════════════════════════════════
+   THEME
+══════════════════════════════════════════ */
+function applyTheme(id,save=true){
+  document.documentElement.setAttribute('data-theme',id);
+  if(save)set(K.theme,id);
+  buildThemeGrid();
+}
+function buildThemeGrid(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  document.getElementById('themeGrid').innerHTML=THEMES.map(t=>`
+    <div class="theme-swatch${t.id===cur?' active':''}" onclick="applyTheme('${t.id}')">
+      <div class="swatch-dot" style="background:${t.bg};border:3px solid ${t.dot}"></div>
+      <span class="swatch-lbl">${t.label}</span>
+    </div>`).join('');
+}
+function openThemeSheet(){buildThemeGrid();openSheet('themeSheet')}
+
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+function switchTab(t){
+  document.getElementById('viewH').classList.toggle('active',t==='hydration');
+  document.getElementById('viewS').classList.toggle('active',t==='supps');
+  document.getElementById('tabH').classList.toggle('active',t==='hydration');
+  document.getElementById('tabS').classList.toggle('active',t==='supps');
+}
+
+/* ══════════════════════════════════════════
+   HYDRATION
+══════════════════════════════════════════ */
+function logWater(ml){
+  ml=Number(ml);lastWater=ml;water+=ml;
+  waterLog.push({amount:ml,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  set(K.water,water);set(K.log,waterLog);
+  updateWaterUI();
+  document.getElementById('undoBtn').classList.add('show');
+  if(navigator.vibrate)navigator.vibrate(22);
+}
+function undoWater(){
+  if(!lastWater||!waterLog.length)return;
+  water=Math.max(0,water-lastWater);waterLog.pop();lastWater=0;
+  set(K.water,water);set(K.log,waterLog);
+  updateWaterUI();document.getElementById('undoBtn').classList.remove('show');
+  if(navigator.vibrate)navigator.vibrate([12,8,12]);
+}
+function updateWaterUI(){
+  const circ=2*Math.PI*90; // r=90, matches viewBox
+  const pct=Math.min(water/GOAL,1);
+  const offset=circ-(circ*pct);
+  const arc=document.getElementById('arcFill');
+  arc.style.strokeDasharray=circ;
+  arc.style.strokeDashoffset=offset;
+  arc.classList.toggle('over',water>GOAL);
+
+  document.getElementById('arcMl').textContent=water.toLocaleString();
+  document.getElementById('arcMl').classList.toggle('over',water>GOAL);
+  document.getElementById('arcLbl').textContent='OF '+GOAL.toLocaleString()+' ML';
+
+  const chip=document.getElementById('statusChip');
+  const isOver=water>GOAL,isGoal=water>=GOAL;
+  const rem=Math.max(GOAL-water,0),exc=water-GOAL;
+  if(isOver){
+    chip.textContent='+'+exc.toLocaleString()+' ml over goal ⚠️';chip.className='status-chip over';
+    if(!wasOver){showToast('⚠️ Exceeded daily goal!','warn');if(navigator.vibrate)navigator.vibrate([50,30,50,30,80]);}
+  } else if(isGoal){
+    chip.textContent='Daily goal reached! 🎉';chip.className='status-chip goal';updateStreak(true);
+  } else {
+    chip.textContent=rem.toLocaleString()+' ml to go';chip.className='status-chip';
+  }
+  wasOver=isOver;
+
+  const histEl=document.getElementById('waterHistory');
+  histEl.innerHTML=!waterLog.length
+    ?'<div class="history-empty">Nothing logged yet today</div>'
+    :[...waterLog].reverse().map(e=>`<div class="history-row"><span class="h-amount">+${Number(e.amount).toLocaleString()} ml</span><span class="h-time">${e.time}</span></div>`).join('');
+}
+function openGoalSheet(){document.getElementById('goalInput').value=GOAL;openSheet('goalSheet');setTimeout(()=>document.getElementById('goalInput').focus(),200)}
+function setGoalVal(v){document.getElementById('goalInput').value=v}
+function saveGoal(){const v=Number(document.getElementById('goalInput').value);if(v>0){GOAL=v;set(K.goal,v);wasOver=false;updateWaterUI();closeSheet('goalSheet');showToast('Goal updated','sage')}}
+function openCustomSheet(){document.getElementById('customWaterInput').value='';openSheet('customSheet');setTimeout(()=>document.getElementById('customWaterInput').focus(),200)}
+function setCustomVal(v){document.getElementById('customWaterInput').value=v}
+function confirmCustom(){const v=Number(document.getElementById('customWaterInput').value);if(v>0){logWater(v);closeSheet('customSheet')}}
+
+/* ══════════════════════════════════════════
+   STREAK
+══════════════════════════════════════════ */
+function loadStreak(){const s=jp(ls(K.streak),{count:0,lastDate:null});renderStreak(s.count)}
+function updateStreak(met){
+  if(!met)return;
+  const today=new Date().toDateString();
+  const s=jp(ls(K.streak),{count:0,lastDate:null});
+  if(s.lastDate===today){renderStreak(s.count);return}
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  s.count=s.lastDate===yesterday.toDateString()?s.count+1:1;
+  s.lastDate=today;set(K.streak,s);renderStreak(s.count);
+}
+function renderStreak(n){
+  const row=document.getElementById('streakRow');
+  if(n>=2){row.style.display='flex';document.getElementById('streakVal').textContent=n+' day'+(n!==1?'s':'')}
+  else row.style.display='none';
+}
+
+/* ══════════════════════════════════════════
+   SUPPLEMENTS
+══════════════════════════════════════════ */
+function todayDow(){return new Date().getDay()} // 0=Sun
+
+function suppScheduledToday(s){
+  if(!s.days||s.days.length===0)return true; // no restriction = every day
+  return s.days.includes(todayDow());
+}
+
+function renderSupps(){
+  const list=document.getElementById('suppsList');
+  const summary=document.getElementById('suppsSummary');
+  if(!supplements.length){
+    list.innerHTML=`<div class="supps-empty"><div class="supps-empty-icon">🌿</div><div class="supps-empty-title">Your stack is empty</div><div class="supps-empty-sub">Add your first supplement to start tracking your daily routine.</div></div>`;
+    summary.textContent='Your stack';return;
+  }
+  const todaySupps=supplements.filter(s=>suppScheduledToday(s));
+  const done=todaySupps.filter(s=>suppChecks[s.id]).length;
+  summary.textContent=todaySupps.length?`${done} / ${todaySupps.length} taken today`:'No supplements scheduled today';
+
+  list.innerHTML=supplements.map(s=>{
+    const meta=TYPE_META[s.type]||TYPE_META.pill;
+    const doses=suppDoses[s.id]||[];
+    const checked=!!suppChecks[s.id];
+    const isToday=suppScheduledToday(s);
+    const totalDose=doses.reduce((a,d)=>a+Number(d.amount),0);
+    const dayLabels=s.days&&s.days.length?s.days.map(d=>DAYS[d]).join(', '):'Every day';
+    const timeLabel=s.specificTime||'';
+    const metaStr=[s.dose+' '+meta.unit, dayLabels, timeLabel].filter(Boolean).join(' · ');
+    const badgeHtml=isToday
+      ?`<div class="supp-badge">✓ Scheduled today</div>`
+      :`<div class="supp-badge not-today">Not today</div>`;
+    const doseHistory=doses.length?`<div class="supp-logs">${doses.map(d=>`<div class="supp-log-pill">+${d.amount} ${meta.unit} · ${d.time}</div>`).join('')}</div>`:'';
+
+    return `<div class="supp-card${!isToday?' inactive':''}">
+      <div class="supp-card-main">
+        <div class="supp-icon ${s.type}">${meta.emoji}</div>
+        <div class="supp-info">
+          <div class="supp-name">${esc(s.name)}</div>
+          <div class="supp-meta">${esc(metaStr)}</div>
+          ${badgeHtml}
+        </div>
+        <div class="supp-actions">
+          <button class="edit-btn" onclick="openEditSuppSheet('${s.id}')">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="check-btn${checked?' done':''}" onclick="toggleCheck('${s.id}')">
+            <svg width="14" height="14" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="supp-log-bar">
+        <input type="number" inputmode="decimal" placeholder="${s.dose}" id="di-${s.id}">
+        <span class="supp-unit">${meta.unit}</span>
+        <button class="log-dose-btn" onclick="logDose('${s.id}')">Log dose</button>
+      </div>
+      ${doseHistory}
+    </div>`;
+  }).join('');
+}
+
+function toggleCheck(id){
+  suppChecks[id]=!suppChecks[id];set(K.schecks,suppChecks);renderSupps();
+  if(navigator.vibrate)navigator.vibrate(suppChecks[id]?[15,8,25]:15);
+}
+function logDose(id){
+  const input=document.getElementById('di-'+id);
+  const s=supplements.find(x=>x.id===id);if(!s)return;
+  const amount=Number(input.value)||Number(s.dose);if(!amount)return;
+  if(!suppDoses[id])suppDoses[id]=[];
+  suppDoses[id].push({amount,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if(!suppChecks[id]){suppChecks[id]=true;set(K.schecks,suppChecks)}
+  set(K.sdoses,suppDoses);input.value='';renderSupps();
+  showToast('Dose logged ✓','sage');if(navigator.vibrate)navigator.vibrate(22);
+}
+
+/* Add / Edit form */
+function openAddSuppSheet(){
+  editSuppId=null;selType='pill';selDays=[];selTime='08:00';
+  document.getElementById('addSuppTitle').textContent='Add supplement';
+  document.getElementById('suppName').value='';
+  document.getElementById('suppDose').value='';
+  document.getElementById('suppNotes').value='';
+  document.getElementById('suppTime').value='08:00';
+  document.getElementById('deleteSuppWrap').style.display='none';
+  refreshTypeUI();refreshDayUI();updateUnitLabel();
+  openSheet('addSuppSheet');
+  setTimeout(()=>document.getElementById('suppName').focus(),200);
+}
+function openEditSuppSheet(id){
+  const s=supplements.find(x=>x.id===id);if(!s)return;
+  editSuppId=id;selType=s.type;selDays=[...(s.days||[])];selTime=s.specificTime||'08:00';
+  document.getElementById('addSuppTitle').textContent='Edit supplement';
+  document.getElementById('suppName').value=s.name;
+  document.getElementById('suppDose').value=s.dose;
+  document.getElementById('suppNotes').value=s.notes||'';
+  document.getElementById('suppTime').value=selTime;
+  document.getElementById('deleteSuppWrap').style.display='block';
+  refreshTypeUI();refreshDayUI();updateUnitLabel();
+  openSheet('addSuppSheet');
+}
+function selectType(t){selType=t;refreshTypeUI();updateUnitLabel()}
+function refreshTypeUI(){
+  ['pill','powder','liquid'].forEach(t=>{
+    document.getElementById('tc-'+t).className='type-chip'+(t===selType?' sel-'+t:'');
+  });
+}
+function updateUnitLabel(){document.getElementById('suppUnitLabel').textContent=TYPE_META[selType]?.unit||'units'}
+function toggleDay(el){
+  const d=Number(el.dataset.day);
+  const i=selDays.indexOf(d);
+  if(i>=0)selDays.splice(i,1);else selDays.push(d);
+  el.classList.toggle('sel',selDays.includes(d));
+}
+function refreshDayUI(){
+  document.querySelectorAll('#dayChips .day-chip').forEach(c=>c.classList.toggle('sel',selDays.includes(Number(c.dataset.day))));
+}
+function saveSupp(){
+  const name=document.getElementById('suppName').value.trim();
+  if(!name){document.getElementById('suppName').focus();return}
+  const obj={
+    name,type:selType,
+    dose:document.getElementById('suppDose').value,
+    days:[...selDays],
+    specificTime:document.getElementById('suppTime').value,
+    notes:document.getElementById('suppNotes').value.trim(),
+  };
+  if(editSuppId){Object.assign(supplements.find(x=>x.id===editSuppId),obj)}
+  else{supplements.push({id:uid(),...obj})}
+  set(K.supps,supplements);closeSheet('addSuppSheet');renderSupps();
+  showToast(editSuppId?'Supplement updated':'Supplement added ✓','sage');
+}
+function deleteSupp(){
+  if(!editSuppId||!confirm('Remove this supplement?'))return;
+  supplements=supplements.filter(x=>x.id!==editSuppId);
+  delete suppDoses[editSuppId];delete suppChecks[editSuppId];
+  set(K.supps,supplements);set(K.sdoses,suppDoses);set(K.schecks,suppChecks);
+  closeSheet('addSuppSheet');renderSupps();showToast('Supplement removed');
+}
+
+/* ══════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════ */
+function updateNotifPill(){
+  const on=notif.enabled&&(typeof Notification==='undefined'||Notification.permission==='granted');
+  document.getElementById('notifPillLabel').textContent=on?'Reminders on':'Reminders';
+}
+function openNotifSheet(){
+  const denied='Notification' in window&&Notification.permission==='denied';
+  document.getElementById('permBanner').classList.toggle('show',denied);
+  document.getElementById('notifEnabled').checked=notif.enabled;
+  document.getElementById('quietEnabled').checked=notif.quietEnabled;
+  document.getElementById('quietStart').value=notif.quietStart||'22:00';
+  document.getElementById('quietEnd').value=notif.quietEnd||'07:00';
+  document.getElementById('quietTimesRow').style.display=notif.quietEnabled?'flex':'none';
+  document.querySelectorAll('.interval-chip').forEach(c=>c.classList.toggle('sel',parseFloat(c.dataset.v)===selInterval));
+  openSheet('notifSheet');
+}
+function toggleQuietUI(){
+  const on=document.getElementById('quietEnabled').checked;
+  document.getElementById('quietTimesRow').style.display=on?'flex':'none';
+  saveNotif();
+}
+async function handleNotifToggle(){
+  const want=document.getElementById('notifEnabled').checked;
+  if(want){
+    if(!('Notification' in window)){document.getElementById('notifEnabled').checked=false;showToast('Not supported in this browser');return}
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){
+      document.getElementById('notifEnabled').checked=false;
+      document.getElementById('permBanner').classList.add('show');
+      showToast('Permission denied','warn');return;
+    }
+    notif.enabled=true;
+    new Notification('Vitál · Reminders on 💧',{body:`You'll be reminded every ${fmtInterval(notif.intervalHours)}.`});
+  } else {notif.enabled=false}
+  saveNotif();
+}
+function pickInterval(v){
+  selInterval=v;notif.intervalHours=v;
+  document.querySelectorAll('.interval-chip').forEach(c=>c.classList.toggle('sel',parseFloat(c.dataset.v)===v));
+  saveNotif();
+}
+function saveNotif(){
+  notif.quietEnabled=document.getElementById('quietEnabled').checked;
+  notif.quietStart=document.getElementById('quietStart').value;
+  notif.quietEnd=document.getElementById('quietEnd').value;
+  notif.intervalHours=selInterval;
+  set(K.notif,notif);scheduleReminders();updateNotifPill();
+}
+function saveNotifAndClose(){saveNotif();closeSheet('notifSheet')}
+
+function isQuietNow(){
+  if(!notif.quietEnabled)return false;
+  const now=new Date();
+  const [sh,sm]=notif.quietStart.split(':').map(Number);
+  const [eh,em]=notif.quietEnd.split(':').map(Number);
+  const cur=now.getHours()*60+now.getMinutes();
+  const start=sh*60+sm,end=eh*60+em;
+  // handles overnight ranges (e.g. 22:00 – 07:00)
+  if(start>end)return cur>=start||cur<end;
+  return cur>=start&&cur<end;
+}
+function scheduleReminders(){
+  clearInterval(reminderTimer);
+  if(!notif.enabled)return;
+  const ms=notif.intervalHours*3600000;
+  reminderTimer=setInterval(()=>{
+    if(isQuietNow())return;
+    if(Notification.permission!=='granted')return;
+    const rem=Math.max(GOAL-water,0);
+    const pct=Math.round((water/GOAL)*100);
+    const body=water>=GOAL?`Goal hit today! Great work 🎉`:`${rem.toLocaleString()} ml to go — ${pct}% done. Time to drink! 💧`;
+    new Notification('Vitál — Hydration reminder',{body});
+  },ms);
+}
+function fmtInterval(h){if(h<1)return h*60+' min';if(h===1)return '1 hour';return h+' hours'}
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
