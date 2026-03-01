@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vitál">
-<link rel="apple-touch-icon" href="https://ipeppas75.github.io/assets/sup.png">
 <title>Vitál</title>
 <meta name="theme-color" content="#080C14" id="themeColorMeta">
 <link rel="manifest" id="manifestLink">
@@ -1337,23 +1336,31 @@ function updateNtfyStatus(){
 async function sendNtfy(title, body, tags=''){
   if(!ntfyTopic)return;
   try {
-    await fetch('https://ntfy.sh/'+encodeURIComponent(ntfyTopic), {
+    const topic=encodeURIComponent(ntfyTopic.trim());
+    const t=encodeURIComponent(title);
+    const tg=encodeURIComponent(tags||'bell');
+    const url=`https://ntfy.sh/${topic}?title=${t}&priority=default&tags=${tg}`;
+    const resp = await fetch(url, {
       method:'POST',
-      headers:{
-        'Title': title,
-        'Priority': 'default',
-        'Tags': tags||'bell',
-        'Content-Type': 'text/plain',
-      },
       body: body
     });
-  } catch(e){ console.warn('ntfy send failed',e); }
+    console.log('ntfy response:', resp.status, resp.statusText);
+    return resp.ok;
+  } catch(e){
+    console.warn('ntfy send failed', e);
+    return false;
+  }
 }
 
 async function testNtfy(){
   if(!ntfyTopic){showToast('Save a topic first','warn');return;}
-  await sendNtfy('Vitál — Test 💧','Notifications are working! Your reminders will arrive here.','white_check_mark');
-  showToast('Test sent! Check ntfy app','sage');
+  showToast('Sending...');
+  const ok = await sendNtfy('Vitál — Test 💧','Notifications are working!','white_check_mark');
+  if(ok===false){
+    showToast('Failed — check topic name','warn');
+  } else {
+    showToast('Sent! Check ntfy app ✓','sage');
+  }
 }
 
 // Schedule ntfy notifications using setTimeout (fires while app is open)
@@ -1543,4 +1550,3 @@ document.getElementById('manifestLink').href = URL.createObjectURL(mBlob);
 </script>
 </body>
 </html>
-
