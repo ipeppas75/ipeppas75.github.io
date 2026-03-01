@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vitál">
-<link rel="apple-touch-icon" href="https://ipeppas75.github.io/assets/water.png">
 <title>Vitál</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
@@ -734,6 +733,9 @@ function init(){
   document.getElementById('headerDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   wasOver=water>GOAL;
   loadStreak();updateWaterUI();renderSupps();updateNotifPill();scheduleReminders();scheduleAllSuppReminders();
+  checkMissedSuppReminders();
+  checkMissedWaterReminder();
+  set('VT_LASTOPEN',Date.now());
   scheduleMidnightReset();
 }
 
@@ -1040,9 +1042,12 @@ function deleteSupp(){
 
 /* ══════════════════════════════════════════
    SUPPLEMENT REMINDERS
+   iOS PWA note: JS is suspended in background.
+   We use two strategies:
+   1. setTimeout for foreground (tab open)
+   2. On every app resume/open, fire any missed reminders
 ══════════════════════════════════════════ */
 function scheduleAllSuppReminders(){
-  // Clear existing
   Object.keys(suppReminderTimers).forEach(clearSuppReminder);
   supplements.forEach(s=>{
     if(s.reminderEnabled)scheduleSuppReminder(s);
@@ -1059,30 +1064,85 @@ function suppReminderScheduledToday(s){
   if(!days||!days.length)return true;
   return days.includes(todayDow());
 }
+
 function scheduleSuppReminder(s){
   if(!('Notification' in window)||Notification.permission!=='granted')return;
   if(!suppReminderScheduledToday(s))return;
-
   const now=new Date();
   const [h,m]=(s.reminderTime||'08:00').split(':').map(Number);
   const target=new Date(now);
   target.setHours(h,m,0,0);
-
-  let ms=target.getTime()-now.getTime();
-  if(ms<0)return; // already passed today
+  const ms=target.getTime()-now.getTime();
+  if(ms<0)return;
   if(isQuietNow())return;
-
   suppReminderTimers[s.id]=setTimeout(()=>{
     if(Notification.permission!=='granted')return;
     if(!suppReminderScheduledToday(s))return;
     if(isQuietNow())return;
-    const meta=TYPE_META[s.type]||TYPE_META.pill;
-    new Notification(`Vitál — Time for ${s.name}`,{
-      body:`Take ${s.dose} ${meta.unit}${s.notes?' · '+s.notes:''}`,
-      tag:'supp-'+s.id
-    });
+    fireSuppNotification(s);
   },ms);
 }
+
+function fireSuppNotification(s){
+  const meta=TYPE_META[s.type]||TYPE_META.pill;
+  new Notification(`Vitál — Time for ${s.name}`,{
+    body:`Take ${s.dose} ${meta.unit}${s.notes?' · '+s.notes:''}`,
+    tag:'supp-'+s.id,
+    icon:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>'
+  });
+}
+
+// Called on app resume — fires any supplement reminders that were missed while app was closed
+function checkMissedSuppReminders(){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const now=new Date();
+  const nowMins=now.getHours()*60+now.getMinutes();
+  const lastOpen=Number(ls('VT_LASTOPEN')||0);
+  const lastOpenMins=lastOpen?new Date(lastOpen).getHours()*60+new Date(lastOpen).getMinutes():0;
+  const today=new Date().toDateString();
+  const lastOpenDate=lastOpen?new Date(lastOpen).toDateString():null;
+  supplements.forEach(s=>{
+    if(!s.reminderEnabled)return;
+    if(!suppReminderScheduledToday(s))return;
+    const [h,m]=(s.reminderTime||'08:00').split(':').map(Number);
+    const reminderMins=h*60+m;
+    // Fire if: reminder time passed today AND (app was closed/different day OR last open was before reminder time)
+    const passedToday=nowMins>=reminderMins;
+    const missedIt=lastOpenDate!==today||(lastOpenDate===today&&lastOpenMins<reminderMins);
+    const alreadyChecked=suppChecks[s.id];
+    if(passedToday&&missedIt&&!alreadyChecked&&!isQuietNow()){
+      fireSuppNotification(s);
+    }
+  });
+  set('VT_LASTOPEN', Date.now());
+}
+
+// Check missed water reminders on resume
+function checkMissedWaterReminder(){
+  if(!notif.enabled)return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  if(isQuietNow())return;
+  const lastOpen=Number(ls('VT_LASTOPEN')||0);
+  if(!lastOpen)return;
+  const gapHours=(Date.now()-lastOpen)/3600000;
+  if(gapHours>=notif.intervalHours&&water<GOAL){
+    const rem=Math.max(GOAL-water,0);
+    new Notification('Vitál — Hydration reminder',{
+      body:`${rem.toLocaleString()} ml to go. Time to drink! 💧`,
+      tag:'water-reminder'
+    });
+  }
+}
+
+// Listen for app coming back to foreground
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    checkMissedSuppReminders();
+    checkMissedWaterReminder();
+    scheduleAllSuppReminders();
+    scheduleReminders();
+  }
+});
 
 function updateSuppRemindersSummary(){
   const el=document.getElementById('suppRemindersSummary');
@@ -1181,7 +1241,8 @@ function scheduleReminders(){
     const rem=Math.max(GOAL-water,0);
     const pct=Math.round((water/GOAL)*100);
     const body=water>=GOAL?`Goal hit today! Great work 🎉`:`${rem.toLocaleString()} ml to go — ${pct}% done. Time to drink! 💧`;
-    new Notification('Vitál — Hydration reminder',{body});
+    new Notification('Vitál — Hydration reminder',{body,tag:'water-reminder'});
+    set('VT_LASTOPEN',Date.now());
   },ms);
 }
 function fmtInterval(h){if(h<1)return h*60+' min';if(h===1)return '1 hour';return h+' hours'}
@@ -1216,5 +1277,3 @@ init();
 </script>
 </body>
 </html>
-
-
