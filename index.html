@@ -3,336 +3,614 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SuppTrack">
-
     <title>SuppTrack</title>
-    
     <style>
+        /* ─── THEMES ──────────────────────────────────────────── */
         :root {
-            --bg: #000000;
-            --card: #1c1c1e;
-            --primary: #00D2FF;
-            --secondary: #007AFF;
-            --text: #ffffff;
-            --text-dim: #8e8e93;
-            --success: #32D74B;
-            --reset-color: #ff453a;
+            --bg: #000; --card: #1c1c1e; --card-border: #2c2c2e;
+            --primary: #00D2FF; --secondary: #007AFF;
+            --text: #fff; --text-dim: #8e8e93;
+            --success: #32D74B; --warn: #FF9F0A; --danger: #ff453a;
+            --overlay: rgba(0,0,0,0.95);
         }
+        [data-theme="ocean"]  { --bg:#0a0f1e; --card:#111827; --card-border:#1e3a5f; --primary:#38bdf8; --secondary:#0ea5e9; --text:#f0f9ff; --text-dim:#64748b; --overlay:rgba(5,10,20,0.97); }
+        [data-theme="forest"] { --bg:#0a140a; --card:#111a11; --card-border:#1a3a1a; --primary:#4ade80; --secondary:#16a34a; --text:#f0fdf4; --text-dim:#6b7280; --overlay:rgba(5,10,5,0.97); }
+        [data-theme="sunset"] { --bg:#0f0a00; --card:#1a1208; --card-border:#3a2a10; --primary:#fb923c; --secondary:#ef4444; --text:#fff7ed; --text-dim:#78716c; --overlay:rgba(10,5,0,0.97); }
+        [data-theme="rose"]   { --bg:#100008; --card:#1a0812; --card-border:#3a1028; --primary:#f472b6; --secondary:#ec4899; --text:#fdf2f8; --text-dim:#9d4f6e; --overlay:rgba(10,0,8,0.97); }
+        [data-theme="light"]  { --bg:#f2f2f7; --card:#fff; --card-border:#d1d1d6; --primary:#007AFF; --secondary:#5856D6; --text:#1c1c1e; --text-dim:#6e6e73; --success:#34C759; --danger:#ff3b30; --warn:#FF9500; --overlay:rgba(200,200,210,0.95); }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, system-ui, sans-serif;
-        }
-
+        /* ─── BASE ────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            width: 100%;
+            margin: 0; padding: 0;
+            background: var(--bg); color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            height: 100dvh; display: flex; flex-direction: column;
+            overflow: hidden; width: 100%;
+            transition: background 0.4s, color 0.4s;
         }
 
-        /* --- Header --- */
+        /* ─── HEADER ──────────────────────────────────────────── */
         header {
-            padding: calc(env(safe-area-inset-top) + 20px) 25px 0px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: calc(env(safe-area-inset-top) + 16px) 18px 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        header h1 { font-size: 20px; font-weight: 800; margin: 0; color: var(--primary); }
-        
-        .reset-btn {
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--reset-color);
-            background: rgba(255, 69, 58, 0.1);
-            padding: 6px 12px;
-            border-radius: 12px;
-            letter-spacing: 0.5px;
+        .logo { display: flex; flex-direction: column; gap: 1px; }
+        .logo h1 { font-size: 20px; font-weight: 900; margin: 0; color: var(--primary); transition: color 0.4s; letter-spacing: -0.5px; }
+        .streak-badge {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 11px; font-weight: 700; color: var(--warn);
+            letter-spacing: 0.3px;
         }
+        .header-actions { display: flex; gap: 7px; align-items: center; }
+        .hdr-btn {
+            font-size: 10px; font-weight: 800; padding: 6px 11px;
+            border-radius: 12px; letter-spacing: 0.6px; cursor: pointer;
+        }
+        .icon-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(128,128,128,0.12); border: 1px solid rgba(128,128,128,0.2);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .icon-btn:active { background: rgba(128,128,128,0.25); }
+        .icon-btn svg { stroke: var(--primary); transition: stroke 0.4s; }
+        .theme-btn, .goal-btn { color: var(--primary); background: rgba(128,128,128,0.12); border: 1px solid rgba(128,128,128,0.2); }
+        .reset-btn { color: var(--danger); background: rgba(255,69,58,0.1); }
 
+        /* ─── CONTENT ─────────────────────────────────────────── */
         .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-evenly;
-            padding: 10px 0;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-evenly;
+            padding: 8px 0;
         }
 
-        /* --- Stats Logic --- */
+        /* ─── STATS ───────────────────────────────────────────── */
         .stats-box { text-align: center; }
-        .stats-box h2 { font-size: 68px; margin: 0; font-weight: 900; line-height: 1; transition: color 0.3s; }
-        .stats-box p { font-size: 13px; color: var(--text-dim); margin-top: 10px; font-weight: 700; letter-spacing: 1.5px; }
-        
+        .stats-box h2 { font-size: 66px; margin: 0; font-weight: 900; line-height: 1; transition: color 0.3s; letter-spacing: -2px; }
+        .stats-box p { font-size: 12px; color: var(--text-dim); margin-top: 8px; font-weight: 700; letter-spacing: 1.5px; transition: color 0.3s; }
         .remaining-chip {
-            background: var(--card);
-            border: 1px solid #333;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--primary);
+            background: var(--card); border: 1px solid var(--card-border);
+            padding: 5px 13px; border-radius: 20px;
+            font-size: 12px; font-weight: 700; margin-bottom: 4px;
+            color: var(--primary); transition: background 0.4s, border-color 0.4s, color 0.4s;
+            display: inline-block;
         }
 
-        /* --- Fluid Glass with Seamless Animation --- */
+        /* ─── GLASS + WATER ───────────────────────────────────── */
+        .glass-wrap { position: relative; }
         .glass {
-            position: relative;
-            width: 150px;
-            height: 280px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: none;
-            border-radius: 0 0 45px 45px;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            position: relative; width: 150px; height: 280px;
+            background: rgba(128,128,128,0.05);
+            border: 3px solid rgba(128,128,128,0.14);
+            border-top: none; border-radius: 0 0 45px 45px;
+            overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35);
         }
-
+        /* Tick marks on the side */
+        .glass::after {
+            content: '';
+            position: absolute; top: 0; right: 6px; bottom: 0;
+            width: 1px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%, transparent calc(25% - 1px),
+                rgba(255,255,255,0.12) calc(25% - 1px), rgba(255,255,255,0.12) 25%
+            );
+            pointer-events: none;
+        }
         .water {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 0%; /* Dynamic */
+            position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 0%;
             background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
-            transition: height 1.8s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: height 1.8s cubic-bezier(0.19,1,0.22,1), background 0.5s;
             will-change: height;
         }
-
-        /* Seamless Wave via CSS Background Repeat */
+        .water.over-goal {
+            background: linear-gradient(180deg, var(--warn) 0%, #e67700 100%) !important;
+        }
         .water::before {
-            content: "";
-            position: absolute;
-            top: -24px;
-            left: 0;
-            width: 200%; /* Wider to prevent gaps */
-            height: 25px;
-            /* Inlined SVG for 100% reliability */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 25 20 50 10 T 100 10 L 100 20 L 0 20 Z' fill='%2300D2FF'/%3E%3C/svg%3E");
-            background-size: 50% 100%; /* Matches container width */
-            background-repeat: repeat-x;
+            content: ''; position: absolute; top: -24px; left: 0;
+            width: 200%; height: 25px;
+            background-size: 50% 100%; background-repeat: repeat-x;
             animation: move-wave 2.5s linear infinite;
         }
+        @keyframes move-wave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        @keyframes move-wave {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+        /* ─── UNDO BUTTON ─────────────────────────────────────── */
+        .undo-area {
+            display: flex; align-items: center; justify-content: center;
+            height: 30px;
         }
+        .undo-btn {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 12px; font-weight: 700; color: var(--text-dim);
+            background: transparent; border: none; padding: 4px 10px;
+            border-radius: 10px; cursor: pointer; opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.25s, transform 0.25s, color 0.2s;
+        }
+        .undo-btn.visible { opacity: 1; transform: translateY(0); }
+        .undo-btn:active { color: var(--primary); }
+        .undo-btn svg { stroke: var(--text-dim); transition: stroke 0.2s; }
 
-        /* --- Input Dock --- */
+        /* ─── DOCK ────────────────────────────────────────────── */
         .dock {
-            padding: 0 20px calc(env(safe-area-inset-bottom) + 20px);
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            width: 100%;
+            padding: 0 18px calc(env(safe-area-inset-bottom) + 16px);
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; width: 100%;
         }
-
         .btn {
-            background: var(--card);
-            border: 1px solid #333;
-            border-radius: 22px;
-            padding: 24px 10px;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            font-size: 15px;
-            font-weight: 800;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: var(--card); border: 1px solid var(--card-border);
+            border-radius: 22px; padding: 20px 10px;
+            color: var(--text); display: flex; flex-direction: column;
+            align-items: center; gap: 10px; font-size: 14px; font-weight: 800;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            transition: background 0.4s, border-color 0.4s, color 0.4s, transform 0.12s;
         }
+        .btn:active { transform: scale(0.91); border-color: var(--primary); }
+        .btn svg { stroke: var(--primary); transition: stroke 0.4s; }
 
-        .btn:active { background: #323235; transform: scale(0.92); border-color: var(--primary); }
-        .btn svg { stroke: var(--primary); }
-
-        /* --- Custom Modal --- */
-        #modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            z-index: 99;
+        /* ─── TOAST ───────────────────────────────────────────── */
+        #toast {
+            position: fixed; top: calc(env(safe-area-inset-top) + 70px);
+            left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: var(--warn); color: #000;
+            font-size: 13px; font-weight: 800;
+            padding: 10px 20px; border-radius: 20px;
+            white-space: nowrap; letter-spacing: 0.3px;
+            box-shadow: 0 6px 24px rgba(255,159,10,0.45);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 200;
         }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        .modal-card {
-            background: var(--card);
-            width: 100%;
-            padding: 35px;
-            border-radius: 35px;
-            text-align: center;
-            border: 1px solid #444;
+        /* ─── MODALS ──────────────────────────────────────────── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: var(--overlay);
+            display: none; align-items: flex-end; justify-content: center;
+            padding: 0; z-index: 99;
         }
-
-        input {
-            width: 100%;
-            background: #000;
-            border: 2px solid var(--primary);
-            color: white;
-            font-size: 36px;
-            padding: 15px;
-            border-radius: 18px;
-            margin: 25px 0;
-            text-align: center;
-            outline: none;
+        .modal-sheet {
+            background: var(--card); width: 100%;
+            padding: 28px 28px calc(env(safe-area-inset-bottom) + 28px);
+            border-radius: 32px 32px 0 0; text-align: center;
+            border-top: 1px solid var(--card-border);
+            animation: slideUp 0.3s cubic-bezier(0.19,1,0.22,1);
         }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-sheet h3 { margin: 0 0 4px; font-size: 20px; color: var(--text); font-weight: 800; }
+        .modal-subtitle { font-size: 12px; color: var(--text-dim); margin: 0 0 4px; }
+        .drag-pill { width: 36px; height: 4px; background: var(--card-border); border-radius: 2px; margin: 0 auto 20px; }
 
+        input[type="number"] {
+            width: 100%; background: var(--bg);
+            border: 2px solid var(--primary); color: var(--text);
+            font-size: 34px; padding: 14px; border-radius: 16px;
+            margin: 18px 0; text-align: center; outline: none;
+            transition: background 0.4s, border-color 0.4s, color 0.4s;
+            font-weight: 700;
+        }
         .confirm-btn {
-            background: var(--primary);
-            width: 100%;
-            padding: 18px;
-            border-radius: 18px;
-            color: #000;
-            font-weight: 800;
-            border: none;
-            font-size: 16px;
+            background: var(--primary); width: 100%; padding: 16px;
+            border-radius: 16px; color: #000; font-weight: 800;
+            border: none; font-size: 15px; cursor: pointer; transition: background 0.4s;
         }
+        .cancel-btn {
+            background: transparent; width: 100%; padding: 12px;
+            border-radius: 16px; color: var(--text-dim); font-weight: 700;
+            border: none; font-size: 14px; margin-top: 6px; cursor: pointer;
+        }
+        .presets { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+        .preset-chip {
+            background: rgba(128,128,128,0.12); border: 1px solid rgba(128,128,128,0.2);
+            color: var(--primary); font-size: 13px; font-weight: 700;
+            padding: 6px 13px; border-radius: 14px; cursor: pointer; transition: color 0.4s;
+        }
+        .preset-chip:active { opacity: 0.7; }
+
+        /* ─── HISTORY ─────────────────────────────────────────── */
+        .history-list { text-align: left; margin: 14px 0 0; max-height: 200px; overflow-y: auto; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid var(--card-border);
+            font-size: 14px;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-amount { font-weight: 800; color: var(--primary); }
+        .history-time { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+        .history-empty { color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px 0; }
+
+        /* ─── THEME GRID ──────────────────────────────────────── */
+        .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 8px; }
+        .theme-swatch {
+            border-radius: 16px; padding: 12px 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            cursor: pointer; border: 2px solid transparent;
+            transition: border-color 0.2s, transform 0.15s;
+            background: rgba(128,128,128,0.08);
+        }
+        .theme-swatch:active { transform: scale(0.93); }
+        .theme-swatch.active { border-color: var(--primary); }
+        .swatch-dot { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .swatch-label { font-size: 10px; font-weight: 800; letter-spacing: 0.7px; color: var(--text); text-transform: uppercase; }
     </style>
 </head>
-<body onload="init()">
+<body data-theme="dark" onload="init()">
 
     <header>
-        <h1>SuppTrack</h1>
-        <div class="reset-btn" onclick="resetAll()">RESET</div>
+        <div class="logo">
+            <h1>WaterTrack</h1>
+            <div class="streak-badge" id="streakBadge" style="display:none">🔥 <span id="streakCount">0</span>-day streak</div>
+        </div>
+        <div class="header-actions">
+            <!-- History -->
+            <div class="icon-btn" onclick="showHistoryModal()" title="Today's log">
+                <svg width="16" height="16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="hdr-btn theme-btn" onclick="showThemeModal()">THEME</div>
+            <div class="hdr-btn goal-btn" onclick="showGoalModal()">GOAL</div>
+            <div class="hdr-btn reset-btn" onclick="resetAll()">RESET</div>
+        </div>
     </header>
+
+    <div id="toast">⚠️ Over your daily goal!</div>
 
     <div class="content">
         <div class="stats-box">
-            <div id="remainingChip" class="remaining-chip">3,500 ml to go</div>
+            <div id="remainingChip" class="remaining-chip">— ml to go</div>
             <h2 id="totalText">0</h2>
-            <p id="goalLabel">OF 3,500 ML</p>
+            <p id="goalLabel">OF — ML</p>
         </div>
 
-        <div class="glass">
-            <div id="water" class="water"></div>
+        <div class="glass-wrap">
+            <div class="glass">
+                <div id="water" class="water"></div>
+            </div>
+        </div>
+
+        <div class="undo-area">
+            <button class="undo-btn" id="undoBtn" onclick="undoLast()">
+                <svg width="13" height="13" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 5.5 5.5"/></svg>
+                Undo last
+            </button>
         </div>
 
         <div class="dock">
             <div class="btn" onclick="log(250)">
-                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path></svg>
-                250ml
+                <svg width="22" height="22" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path></svg>
+                250 ml
             </div>
             <div class="btn" onclick="log(500)">
-                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
-                500ml
+                <svg width="22" height="22" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+                500 ml
             </div>
-            <div class="btn" onclick="showModal()">
-                <svg width="24" height="24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <div class="btn" onclick="showLogModal()">
+                <svg width="22" height="22" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Custom
             </div>
         </div>
     </div>
 
-    <div id="modal" onclick="hideModal()">
-        <div class="modal-card" onclick="event.stopPropagation()">
-            <h3 style="margin:0; font-size: 22px;">Custom Log</h3>
+    <!-- Log Modal -->
+    <div id="logModal" class="modal-overlay" onclick="hideLogModal()">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="drag-pill"></div>
+            <h3>Custom Log</h3>
             <input type="number" id="customInput" inputmode="numeric" placeholder="0">
             <button class="confirm-btn" onclick="handleCustom()">ADD TO LOG</button>
+            <button class="cancel-btn" onclick="hideLogModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goalModal" class="modal-overlay" onclick="hideGoalModal()">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="drag-pill"></div>
+            <h3>Daily Goal</h3>
+            <p class="modal-subtitle">Set your target intake in ml</p>
+            <div class="presets">
+                <div class="preset-chip" onclick="setPreset(2000)">2,000</div>
+                <div class="preset-chip" onclick="setPreset(2500)">2,500</div>
+                <div class="preset-chip" onclick="setPreset(3000)">3,000</div>
+                <div class="preset-chip" onclick="setPreset(3500)">3,500</div>
+                <div class="preset-chip" onclick="setPreset(4000)">4,000</div>
+            </div>
+            <input type="number" id="goalInput" inputmode="numeric" placeholder="3500">
+            <button class="confirm-btn" onclick="handleSetGoal()">SAVE GOAL</button>
+            <button class="cancel-btn" onclick="hideGoalModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal-overlay" onclick="hideHistoryModal()">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="drag-pill"></div>
+            <h3>Today's Log</h3>
+            <p class="modal-subtitle" id="historyTotal">Total: 0 ml</p>
+            <div class="history-list" id="historyList"></div>
+            <button class="cancel-btn" style="margin-top:14px" onclick="hideHistoryModal()">Done</button>
+        </div>
+    </div>
+
+    <!-- Theme Modal -->
+    <div id="themeModal" class="modal-overlay" onclick="hideThemeModal()">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="drag-pill"></div>
+            <h3>Choose Theme</h3>
+            <div class="theme-grid" id="themeGrid"></div>
+            <button class="cancel-btn" onclick="hideThemeModal()">Done</button>
         </div>
     </div>
 
     <script>
-        const GOAL = 3500;
+        const KEY_AMT    = 'SUPP_AMT';
+        const KEY_DATE   = 'SUPP_DATE';
+        const KEY_GOAL   = 'SUPP_GOAL';
+        const KEY_THEME  = 'SUPP_THEME';
+        const KEY_LOG    = 'SUPP_LOG';    // [{amount, time}]
+        const KEY_STREAK = 'SUPP_STREAK'; // {count, lastGoalDate}
+
         let currentIntake = 0;
+        let GOAL = 3500;
+        let logHistory = []; // [{amount, time}]
+        let lastAmount = 0;
+        let wasOverGoalBefore = false;
+        let toastTimer = null;
 
-        const KEY_AMT = 'SUPP_FINAL_AMT';
-        const KEY_DATE = 'SUPP_FINAL_DATE';
+        /* ─── THEMES ──────────────────────── */
+        const THEMES = [
+            { id:'dark',   label:'Midnight', dot:'#00D2FF', dot2:'#007AFF' },
+            { id:'ocean',  label:'Ocean',    dot:'#38bdf8', dot2:'#0ea5e9' },
+            { id:'forest', label:'Forest',   dot:'#4ade80', dot2:'#16a34a' },
+            { id:'sunset', label:'Sunset',   dot:'#fb923c', dot2:'#ef4444' },
+            { id:'rose',   label:'Rose',     dot:'#f472b6', dot2:'#ec4899' },
+            { id:'light',  label:'Light',    dot:'#007AFF', dot2:'#5856D6' },
+        ];
 
+        function setWave(hex) {
+            const c = hex.replace('#','%23');
+            const svg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 25 20 50 10 T 100 10 L 100 20 L 0 20 Z' fill='${c}'/%3E%3C/svg%3E")`;
+            let el = document.getElementById('wave-style');
+            if (!el) { el = document.createElement('style'); el.id='wave-style'; document.head.appendChild(el); }
+            el.textContent = `.water::before { background-image: ${svg}; }`;
+        }
+
+        function applyTheme(id) {
+            document.body.setAttribute('data-theme', id);
+            localStorage.setItem(KEY_THEME, id);
+            const t = THEMES.find(x=>x.id===id);
+            if (t) setWave(currentIntake > GOAL ? '#FF9F0A' : t.dot);
+            buildThemeGrid();
+            if (navigator.vibrate) navigator.vibrate(15);
+        }
+
+        function buildThemeGrid() {
+            const cur = document.body.getAttribute('data-theme') || 'dark';
+            document.getElementById('themeGrid').innerHTML = THEMES.map(t=>`
+                <div class="theme-swatch ${t.id===cur?'active':''}" onclick="applyTheme('${t.id}')">
+                    <div class="swatch-dot" style="background:linear-gradient(135deg,${t.dot},${t.dot2})"></div>
+                    <span class="swatch-label">${t.label}</span>
+                </div>`).join('');
+        }
+
+        /* ─── STREAK ──────────────────────── */
+        function updateStreak(goalMet) {
+            const today = new Date().toDateString();
+            let streak = JSON.parse(localStorage.getItem(KEY_STREAK) || '{"count":0,"lastGoalDate":null}');
+            if (goalMet) {
+                if (streak.lastGoalDate === today) {
+                    // already counted
+                } else {
+                    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+                    streak.count = (streak.lastGoalDate === yesterday.toDateString()) ? streak.count + 1 : 1;
+                    streak.lastGoalDate = today;
+                    localStorage.setItem(KEY_STREAK, JSON.stringify(streak));
+                }
+            }
+            const badge = document.getElementById('streakBadge');
+            const countEl = document.getElementById('streakCount');
+            if (streak.count >= 2) {
+                badge.style.display = 'flex';
+                countEl.textContent = streak.count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        /* ─── INIT ────────────────────────── */
         function init() {
+            const savedTheme = localStorage.getItem(KEY_THEME) || 'dark';
+            const t = THEMES.find(x=>x.id===savedTheme) || THEMES[0];
+            document.body.setAttribute('data-theme', savedTheme);
+            setWave(t.dot);
+
+            GOAL = Number(localStorage.getItem(KEY_GOAL)) || 3500;
+
             const today = new Date().toDateString();
             const lastDate = localStorage.getItem(KEY_DATE);
-            
             if (lastDate !== today) {
                 currentIntake = 0;
+                logHistory = [];
                 save(today);
             } else {
                 currentIntake = Number(localStorage.getItem(KEY_AMT)) || 0;
+                logHistory = JSON.parse(localStorage.getItem(KEY_LOG) || '[]');
             }
 
-            // Start animation from zero every time app opens
+            wasOverGoalBefore = currentIntake > GOAL;
+
             document.getElementById('water').style.height = '0%';
+            updateStreak(currentIntake >= GOAL);
             setTimeout(updateUI, 200);
         }
 
+        /* ─── LOG ─────────────────────────── */
         function log(val) {
-            // Strict number arithmetic
-            currentIntake = Number(currentIntake) + Number(val);
-            save(new Date().toDateString());
+            val = Number(val);
+            lastAmount = val;
+            const wasOver = currentIntake > GOAL;
+            currentIntake = Number(currentIntake) + val;
+            const now = new Date();
+            logHistory.push({ amount: val, time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+            save(now.toDateString());
             updateUI();
+            // Show undo button
+            const undoBtn = document.getElementById('undoBtn');
+            undoBtn.classList.add('visible');
             if (navigator.vibrate) navigator.vibrate(25);
         }
 
-        function updateUI() {
-            const display = document.getElementById('totalText');
-            display.innerText = currentIntake.toLocaleString();
-
-            const label = document.getElementById('goalLabel');
-            const chip = document.getElementById('remainingChip');
-            
-            const percent = Math.min((currentIntake / GOAL) * 100, 100);
-            const remaining = Math.max(GOAL - currentIntake, 0);
-
-            // Smooth Fluid Rise
-            document.getElementById('water').style.height = percent + '%';
-
-            // Update Remaining Counter
-            if (remaining > 0) {
-                chip.innerText = remaining.toLocaleString() + " ml to go";
-                chip.style.display = "inline-block";
-                display.style.color = 'white';
-                label.innerText = "OF 3,500 ML";
-                label.style.color = 'var(--text-dim)';
-            } else {
-                chip.innerText = "Goal Reached! 🥳";
-                chip.style.color = 'var(--success)';
-                display.style.color = 'var(--success)';
-                label.innerText = "KEEP IT UP!";
-                label.style.color = 'var(--success)';
-            }
+        function undoLast() {
+            if (lastAmount === 0 || logHistory.length === 0) return;
+            currentIntake = Math.max(0, currentIntake - lastAmount);
+            logHistory.pop();
+            lastAmount = 0;
+            save(new Date().toDateString());
+            updateUI();
+            document.getElementById('undoBtn').classList.remove('visible');
+            if (navigator.vibrate) navigator.vibrate([15,10,15]);
         }
 
+        /* ─── UI UPDATE ───────────────────── */
+        function updateUI() {
+            const display   = document.getElementById('totalText');
+            const label     = document.getElementById('goalLabel');
+            const chip      = document.getElementById('remainingChip');
+            const waterEl   = document.getElementById('water');
+            const isOver    = currentIntake > GOAL;
+            const isGoalMet = currentIntake >= GOAL;
+            const percent   = Math.min((currentIntake / GOAL) * 100, 100);
+            const remaining = Math.max(GOAL - currentIntake, 0);
+            const excess    = currentIntake - GOAL;
+
+            display.innerText = currentIntake.toLocaleString();
+            label.innerText = 'OF ' + GOAL.toLocaleString() + ' ML';
+            waterEl.style.height = percent + '%';
+
+            if (isOver) {
+                // Over-goal state: amber water
+                waterEl.classList.add('over-goal');
+                // Wave also amber
+                const t = THEMES.find(x=>x.id===(document.body.getAttribute('data-theme')||'dark'));
+                setWave('#FF9F0A');
+
+                chip.innerText = '+' + excess.toLocaleString() + ' ml over goal ⚠️';
+                chip.style.color = 'var(--warn)';
+                chip.style.borderColor = 'rgba(255,159,10,0.3)';
+                display.style.color = 'var(--warn)';
+                label.style.color = 'var(--warn)';
+
+                // Fire toast only on transition from under → over
+                if (!wasOverGoalBefore) {
+                    showToast('⚠️ You\'ve exceeded your daily goal!');
+                    if (navigator.vibrate) navigator.vibrate([60,40,60,40,100]);
+                }
+            } else if (isGoalMet) {
+                waterEl.classList.remove('over-goal');
+                const t = THEMES.find(x=>x.id===(document.body.getAttribute('data-theme')||'dark'));
+                if (t) setWave(t.dot);
+
+                chip.innerText = 'Goal Reached! 🎉';
+                chip.style.color = 'var(--success)';
+                chip.style.borderColor = 'rgba(50,215,75,0.3)';
+                display.style.color = 'var(--success)';
+                label.style.color = 'var(--success)';
+                updateStreak(true);
+            } else {
+                waterEl.classList.remove('over-goal');
+                const t = THEMES.find(x=>x.id===(document.body.getAttribute('data-theme')||'dark'));
+                if (t) setWave(t.dot);
+
+                chip.innerText = remaining.toLocaleString() + ' ml to go';
+                chip.style.color = 'var(--primary)';
+                chip.style.borderColor = 'var(--card-border)';
+                display.style.color = 'var(--text)';
+                label.style.color = 'var(--text-dim)';
+            }
+
+            wasOverGoalBefore = isOver;
+        }
+
+        /* ─── TOAST ───────────────────────── */
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        /* ─── SAVE ────────────────────────── */
         function save(dateStr) {
-            localStorage.setItem(KEY_AMT, currentIntake);
+            localStorage.setItem(KEY_AMT,  currentIntake);
             localStorage.setItem(KEY_DATE, dateStr);
+            localStorage.setItem(KEY_LOG,  JSON.stringify(logHistory));
         }
 
         function resetAll() {
-            if (confirm("This will clear your progress for today. Are you sure?")) {
-                currentIntake = 0;
+            if (confirm('Clear today\'s progress?')) {
+                currentIntake = 0; logHistory = []; lastAmount = 0;
+                wasOverGoalBefore = false;
+                document.getElementById('undoBtn').classList.remove('visible');
                 save(new Date().toDateString());
                 updateUI();
             }
         }
 
-        function showModal() { 
-            document.getElementById('modal').style.display = 'flex'; 
-            document.getElementById('customInput').focus();
+        /* ─── LOG MODAL ───────────────────── */
+        function showLogModal() {
+            document.getElementById('logModal').style.display = 'flex';
+            setTimeout(()=>document.getElementById('customInput').focus(), 100);
         }
-        function hideModal() { 
-            document.getElementById('modal').style.display = 'none'; 
-        }
+        function hideLogModal() { document.getElementById('logModal').style.display = 'none'; }
         function handleCustom() {
             const val = document.getElementById('customInput').value;
-            if (val > 0) {
-                log(val);
-                document.getElementById('customInput').value = '';
-                hideModal();
+            if (val > 0) { log(val); document.getElementById('customInput').value=''; hideLogModal(); }
+        }
+
+        /* ─── GOAL MODAL ──────────────────── */
+        function showGoalModal() {
+            document.getElementById('goalInput').value = GOAL;
+            document.getElementById('goalModal').style.display = 'flex';
+            setTimeout(()=>document.getElementById('goalInput').focus(), 100);
+        }
+        function hideGoalModal() { document.getElementById('goalModal').style.display='none'; }
+        function setPreset(val) { document.getElementById('goalInput').value = val; }
+        function handleSetGoal() {
+            const val = Number(document.getElementById('goalInput').value);
+            if (val>0) {
+                GOAL = val; localStorage.setItem(KEY_GOAL, GOAL);
+                wasOverGoalBefore = false;
+                hideGoalModal(); updateUI();
+                if (navigator.vibrate) navigator.vibrate(25);
             }
         }
+
+        /* ─── HISTORY MODAL ───────────────── */
+        function showHistoryModal() {
+            const list = document.getElementById('historyList');
+            const total = document.getElementById('historyTotal');
+            total.textContent = 'Total: ' + currentIntake.toLocaleString() + ' ml';
+            if (logHistory.length === 0) {
+                list.innerHTML = '<div class="history-empty">No entries yet today</div>';
+            } else {
+                list.innerHTML = [...logHistory].reverse().map(e=>`
+                    <div class="history-item">
+                        <span class="history-amount">+${Number(e.amount).toLocaleString()} ml</span>
+                        <span class="history-time">${e.time}</span>
+                    </div>`).join('');
+            }
+            document.getElementById('historyModal').style.display='flex';
+        }
+        function hideHistoryModal() { document.getElementById('historyModal').style.display='none'; }
+
+        /* ─── THEME MODAL ─────────────────── */
+        function showThemeModal() { buildThemeGrid(); document.getElementById('themeModal').style.display='flex'; }
+        function hideThemeModal() { document.getElementById('themeModal').style.display='none'; }
     </script>
 </body>
 </html>
