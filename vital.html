@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vitál">
 <title>Vitál</title>
+<meta name="theme-color" content="#080C14" id="themeColorMeta">
+<link rel="manifest" id="manifestLink">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
@@ -609,6 +611,7 @@ input,select{font-family:inherit}
     <div class="sheet-sub">Stay on top of your routine</div>
 
     <div class="perm-banner" id="permBanner">Notifications are blocked. Please update your browser or device settings to enable reminders.</div>
+    <div class="perm-banner show" id="iosBanner" style="background:var(--sage-l);border-color:var(--sage-b);color:var(--sage);display:none">📱 For background notifications on iPhone, add Vitál to your Home Screen via Safari's Share menu, then open it from there.</div>
 
     <div class="toggle-row">
       <div class="toggle-info">
@@ -746,6 +749,9 @@ function applyTheme(id,save=true){
   document.documentElement.setAttribute('data-theme',id);
   if(save)set(K.theme,id);
   buildThemeToggle();
+  const tc=id==='light'?'#EDEAE3':'#080C14';
+  const m=document.getElementById('themeColorMeta');
+  if(m)m.setAttribute('content',tc);
 }
 function buildThemeToggle(){
   const cur=document.documentElement.getAttribute('data-theme');
@@ -1178,6 +1184,11 @@ function updateNotifPill(){
 function openNotifSheet(){
   const denied='Notification' in window&&Notification.permission==='denied';
   document.getElementById('permBanner').classList.toggle('show',denied);
+  // Show iOS hint if on iOS Safari browser (not standalone PWA)
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone=window.navigator.standalone===true;
+  const iosBanner=document.getElementById('iosBanner');
+  if(iosBanner)iosBanner.style.display=(isIOS&&!isStandalone&&!denied)?'block':'none';
   document.getElementById('notifEnabled').checked=notif.enabled;
   document.getElementById('quietEnabled').checked=notif.quietEnabled;
   document.getElementById('quietStart').value=notif.quietStart||'22:00';
@@ -1274,6 +1285,235 @@ function scheduleMidnightReset(){
    BOOT
 ══════════════════════════════════════════ */
 init();
+
+/* ══════════════════════════════════════════
+   SERVICE WORKER — background notifications
+══════════════════════════════════════════ */
+let swReg = null;
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    // Inline SW as blob so no separate file is needed
+    const swCode = `// Vitál Service Worker
+// Handles scheduled notifications via periodic checks
+
+const CACHE = 'vital-v1';
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(self.clients.claim());
+});
+
+// Receive schedule messages from the main app
+self.addEventListener('message', e => {
+  const { type, payload } = e.data || {};
+
+  if (type === 'SCHEDULE_NOTIFICATIONS') {
+    // Store the schedule in SW scope
+    self.notifSchedule = payload;
+  }
+
+  if (type === 'CANCEL_ALL') {
+    self.notifSchedule = null;
+    clearAllAlarms();
+  }
+});
+
+// --- Periodic Background Sync (where supported) ---
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'vital-reminders') {
+    e.waitUntil(checkAndFireReminders());
+  }
+});
+
+// --- Push (fallback, in case server push is added later) ---
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'Vitál', {
+      body: data.body || '',
+      icon: data.icon || '/icon.png',
+      badge: '/icon.png',
+      tag: data.tag || 'vital',
+    })
+  );
+});
+
+// --- Notification click: focus the app ---
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      for (const client of clients) {
+        if (client.url && 'focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('./');
+    })
+  );
+});
+
+// Check schedule and fire any due notifications
+async function checkAndFireReminders() {
+  const schedule = self.notifSchedule;
+  if (!schedule) return;
+
+  const now = new Date();
+  const todayDow = now.getDay();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  // Water reminder
+  if (schedule.water && schedule.water.enabled) {
+    const lastFired = schedule.water.lastFired || 0;
+    const intervalMs = schedule.water.intervalHours * 3600000;
+    const inQuiet = isQuiet(now, schedule.water);
+    if (!inQuiet && (Date.now() - lastFired) >= intervalMs) {
+      const rem = Math.max(schedule.water.goal - schedule.water.current, 0);
+      const body = schedule.water.current >= schedule.water.goal
+        ? 'Goal hit today! Great work 🎉'
+        : \`\${rem.toLocaleString()} ml to go. Time to drink! 💧\`;
+      await self.registration.showNotification('Vitál — Hydration reminder', {
+        body, tag: 'water-reminder', icon: '/icon.png'
+      });
+      // Update lastFired via client message
+      notifyClients({ type: 'WATER_FIRED', ts: Date.now() });
+    }
+  }
+
+  // Supplement reminders
+  if (schedule.supplements) {
+    for (const s of schedule.supplements) {
+      if (!s.reminderEnabled) continue;
+      const days = s.reminderDays && s.reminderDays.length ? s.reminderDays
+        : s.days && s.days.length ? s.days : null;
+      if (days && !days.includes(todayDow)) continue;
+      const inQuiet = isQuiet(now, schedule.water);
+      if (inQuiet) continue;
+      const [h, m] = (s.reminderTime || '08:00').split(':').map(Number);
+      const reminderMins = h * 60 + m;
+      const windowStart = reminderMins;
+      const windowEnd = reminderMins + 60; // 60 min window
+      if (nowMins >= windowStart && nowMins < windowEnd) {
+        const lastTag = \`supp-\${s.id}-\${now.toDateString()}\`;
+        // Use tag to avoid duplicate notifications on same day
+        await self.registration.showNotification(\`Vitál — Time for \${s.name}\`, {
+          body: \`Take \${s.dose} \${s.unit}\${s.notes ? ' · ' + s.notes : ''}\`,
+          tag: lastTag, icon: '/icon.png'
+        });
+      }
+    }
+  }
+}
+
+function isQuiet(now, waterConfig) {
+  if (!waterConfig || !waterConfig.quietEnabled) return false;
+  const [sh, sm] = (waterConfig.quietStart || '22:00').split(':').map(Number);
+  const [eh, em] = (waterConfig.quietEnd || '07:00').split(':').map(Number);
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const start = sh * 60 + sm, end = eh * 60 + em;
+  if (start > end) return cur >= start || cur < end;
+  return cur >= start && cur < end;
+}
+
+async function notifyClients(msg) {
+  const clients = await self.clients.matchAll({ includeUncontrolled: true });
+  clients.forEach(c => c.postMessage(msg));
+}
+
+function clearAllAlarms() {
+  // placeholder for future alarm API
+}
+`;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    swReg = await navigator.serviceWorker.register(swUrl, { scope: './' });
+    await navigator.serviceWorker.ready;
+
+    // Try to register periodic sync (Chrome/Android)
+    if (swReg.periodicSync) {
+      try {
+        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+        if (status.state === 'granted') {
+          await swReg.periodicSync.register('vital-reminders', { minInterval: 30 * 60 * 1000 });
+        }
+      } catch(e) {}
+    }
+
+    // Listen for messages back from SW
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data && e.data.type === 'WATER_FIRED') {
+        set('VT_LASTOPEN', e.data.ts);
+      }
+    });
+
+    syncScheduleToSW();
+  } catch(e) {
+    console.warn('SW registration failed:', e);
+  }
+}
+
+function buildSWSchedule() {
+  return {
+    water: {
+      enabled: notif.enabled,
+      intervalHours: notif.intervalHours,
+      goal: GOAL,
+      current: water,
+      lastFired: Number(ls('VT_LASTOPEN') || 0),
+      quietEnabled: notif.quietEnabled,
+      quietStart: notif.quietStart,
+      quietEnd: notif.quietEnd,
+    },
+    supplements: supplements.map(s => ({
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      dose: s.dose,
+      unit: (TYPE_META[s.type] || TYPE_META.pill).unit,
+      notes: s.notes || '',
+      reminderEnabled: !!s.reminderEnabled,
+      reminderTime: s.reminderTime || '08:00',
+      reminderDays: s.reminderDays || [],
+      days: s.days || [],
+    }))
+  };
+}
+
+function syncScheduleToSW() {
+  if (!swReg || !navigator.serviceWorker.controller) return;
+  navigator.serviceWorker.controller.postMessage({
+    type: 'SCHEDULE_NOTIFICATIONS',
+    payload: buildSWSchedule()
+  });
+}
+
+// Call syncScheduleToSW whenever data changes
+const _origSaveNotif = saveNotif;
+saveNotif = function() { _origSaveNotif(); syncScheduleToSW(); };
+
+const _origSaveSupp = saveSupp;
+saveSupp = function() { _origSaveSupp(); syncScheduleToSW(); };
+
+const _origLogWater = logWater;
+logWater = function(ml) { _origLogWater(ml); syncScheduleToSW(); };
+
+registerSW();
+
+// Inline manifest so no separate file needed
+const manifest = {
+  name: 'Vitál',
+  short_name: 'Vitál',
+  start_url: './',
+  display: 'standalone',
+  background_color: '#080C14',
+  theme_color: '#080C14',
+  icons: [{ src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23111829%22/><text y=%22.9em%22 font-size=%2270%22 x=%2215%22>💧</text></svg>', sizes: '192x192', type: 'image/svg+xml' }]
+};
+const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+document.getElementById('manifestLink').href = URL.createObjectURL(mBlob);
 </script>
 </body>
 </html>
